@@ -1,5 +1,5 @@
 ---
-# Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+# Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 title: "News search and recommendation tutorial - embeddings"
 redirect_from:
 - /documentation/tutorials/news-4-embeddings.html
@@ -33,8 +33,8 @@ and use them to search for relevant news articles.
 We start by generating embeddings using a collaborative filtering method.
 We'll then improve upon that using a content-based approach, which generates embedding based on BERT models.
 Since we'll use this in a nearest neighbors algorithm,
-we'll touch upon how to convert a maximum inner product search to euclidean distance search
-before moving along to the next tutorial.
+we'll touch upon how the maximum inner product search is transformed
+to a distance search form.
 
 Let's start with taking a look again at what data the MIND dataset provides for us.
 
@@ -262,34 +262,39 @@ Here, we use a medium-sized BERT model with 8 layers and a hidden dimension size
 This means that the embedding will be a vector of size 512.
 We use the vector from the first `CLS` token to represent the combined title and abstract.
 
-To generate these embeddings for all news content, run the following.
-This might take a while, around an hour for all news articles in the `train` and `dev` demo dataset.
-Alternatively, skip this step and download pre-processed embeddings, see step below.
+To generate these embeddings for all news content, run one of the following:
 
-<div class="pre-parent">
-  <button class="d-icon d-duplicate pre-copy-button" onclick="copyPreContent(this)"></button>
+<ol>
+  <li>
+  Generate embeddings.
+  This might take a while, around an hour for all news articles in the <code>train</code> and <code>dev</code> demo dataset.
+
+  <div class="pre-parent">
+    <button class="d-icon d-duplicate pre-copy-button" onclick="copyPreContent(this)"></button>
 <pre>
 $ python3 src/python/create_bert_embeddings.py mind
 </pre>
-</div>
+  </div>
 
-<!-- ToDo: create_bert_embeddings emit a lot of:
-Be aware, overflowing tokens are not returned for the setting you have chosen,
-i.e. sequence pairs with the 'longest_first' truncation strategy.
-So the returned list will always be empty even if some tokens have been removed.
--->
+  <!-- ToDo: create_bert_embeddings emit a lot of:
+             Be aware, overflowing tokens are not returned for the setting you have chosen,
+             i.e. sequence pairs with the 'longest_first' truncation strategy.
+             So the returned list will always be empty even if some tokens have been removed. -->
+  </li>
+  <li>
+  Download pre-processed embeddings:
 
-<div class="pre-parent">
-  <button class="d-icon d-duplicate pre-copy-button" onclick="copyPreContent(this)"></button>
+  <div class="pre-parent">
+    <button class="d-icon d-duplicate pre-copy-button" onclick="copyPreContent(this)"></button>
 <pre data-test="exec">
-$ mkdir -p news/mind/train
-$ mkdir -p news/mind/dev
 $ curl -L -o mind/train/news_embeddings.tsv \
   https://data.vespa.oath.cloud/sample-apps-data/mind_news_embedding.tsv
 $ curl -L -o mind/dev/news_embeddings.tsv \
   https://data.vespa.oath.cloud/sample-apps-data/mind_news_embedding_dev.tsv
 </pre>
-</div>
+  </div>
+  </li>
+</ol>
 
 This creates a `news_embeddings.tsv` file under the `mind/train` and `mind/dev` subdirectories.
 
@@ -437,21 +442,29 @@ The training script writes these embeddings to the files
 
 ## Mapping from inner-product search to euclidean search
 
-There is one more step we need to do before feeding these vectors to Vespa.
-The vectors have been trained to maximize the inner product.
+These vectors have been trained to maximize the inner product.
 Finding the best news articles given a user vector is called Maximum Inner Product Search - or MIPS.
-Unfortunately, this form isn't really suitable for efficient retrieval.
-We'll get back to this later when discussing approximate nearest neighbors.
+This form isn't really suitable for efficient retrieval as-is,
+but it can be mapped to a nearest neighbor search problem, so
+we can use an efficient approximate nearest neighbors index.
 
-To facilitate efficient retrieval, we need to map the MIPS problem to a Euclidean nearest neighbor search problem.
-We use the technique discussed in
+When specifying `distance-metric: dotproduct`, Vespa uses the technique discussed in
 [Speeding Up the Xbox Recommender System Using a Euclidean Transformation for Inner-Product
-Spaces](https://www.microsoft.com/en-us/research/wp-content/uploads/2016/02/XboxInnerProduct.pdf).
+Spaces](https://www.microsoft.com/en-us/research/wp-content/uploads/2016/02/XboxInnerProduct.pdf)
+to solve the MIPS case. See [blog post announcing MIPS support in Vespa](https://blog.vespa.ai/announcing-maximum-inner-product-search/).
+
+<pre>
+field embedding type tensor&lt;float&gt;(d0[50]) {
+            indexing: attribute | index
+            attribute {
+                distance-metric: dotproduct
+            }
+}</pre>
 
 See [Nearest Neighbor Search](../nearest-neighbor-search.html) for more
 information on nearest neighbor search and supported distance metrics in Vespa.
 
-We've included a script to map the embeddings to euclidean space and create a feed suitable for Vespa:
+We've included a script to create a feed suitable for Vespa:
 
 <div class="pre-parent">
   <button class="d-icon d-duplicate pre-copy-button" onclick="copyPreContent(this)"></button>

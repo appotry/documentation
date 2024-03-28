@@ -1,5 +1,5 @@
 ---
-# Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+# Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 title: "Cloud Config API"
 redirect_from:
 - /documentation/cloudconfig/configapi-dev.html
@@ -61,8 +61,8 @@ from the object model and config set in
 <code>services.xml</code> to produce the final config instance.
 </p><p>
 The config id is given to a service via the VESPA_CONFIG_ID environment variable.
-The <a href="../operations/config-sentinel.html">config sentinel</a> -
-see <a href="../config-introduction.html#bootstrapping">bootstrapping</a> -
+The <a href="/en/operations-selfhosted/config-sentinel.html">config sentinel</a> -
+see <a href="/en/application-packages.html#bootstrapping">bootstrapping</a> -
 sets the environment variable to the id given by the config model.
 This id should then be used by the service to subscribe for config.
 If you are running multiple services,
@@ -162,13 +162,13 @@ app/hosts.xml
 </pre>
 The services file contains the services that is handled by the config model plugin.
 The hosts file contains:
-<pre>
-&lt;hosts&gt;
-  &lt;host name="localhost"&gt;
-    &lt;alias&gt;node0&lt;/alias&gt;
-  &lt;/host&gt;
-&lt;/hosts&gt;
-</pre>
+<pre>{% highlight xml %}
+<hosts>
+  <host name="localhost">
+    <alias>node0</alias>
+  </host>
+</hosts>
+{% endhighlight %}</pre>
 
 
 
@@ -176,16 +176,13 @@ The hosts file contains:
 <p>
 To get a running system, first install the cloudconfig package,
 start the config server, then deploy the application:
-<pre>
-$ vespa-deploy upload /path/to/app/folder
-</pre>
 Prepare the application:
 <pre>
-$ vespa-deploy prepare /path/to/app/folder
+$ vespa prepare /path/to/app/folder
 </pre>
 Activate the application:
 <pre>
-$ vespa-deploy activate /path/to/app/folder
+$ vespa activate /path/to/app/folder
 </pre>
 <p>
 Then, start vespa. This will start the application and pass it its config id
@@ -229,22 +226,22 @@ from the config check/retrieval part. The subscribing part:
     <tr>
       <th>C++</th>
       <td>
-<pre>
+<pre>{% highlight xml %}
 ConfigSubscriber subscriber;
-ConfigHandle&lt;FooConfig&gt;::UP fooHandle = subscriber.subscribe&lt;FooConfig&gt;(&hellip;);
-ConfigHandle&lt;BarConfig&gt;::UP barHandle = subscriber.subscribe&lt;BarConfig&gt;(&hellip;);
-ConfigHandle&lt;BazConfig&gt;::UP bazHandle = subscriber.subscribe&lt;BazConfig&gt;(&hellip;);
-</pre>
+ConfigHandle<FooConfig>::UP fooHandle = subscriber.subscribe<FooConfig>(&hellip;);
+ConfigHandle<BarConfig>::UP barHandle = subscriber.subscribe<BarConfig>(&hellip;);
+ConfigHandle<BazConfig>::UP bazHandle = subscriber.subscribe<BazConfig>(&hellip;);
+{% endhighlight %}</pre>
       </td>
     </tr><tr>
       <th>Java</th>
       <td>
-<pre>
+<pre>{% highlight xml %}
 ConfigSubscriber subscriber;
-ConfigHandle&lt;FooConfig&gt; fooHandle = subscriber.subscribe(FooConfig.class, &hellip;);
-ConfigHandle&lt;BarConfig&gt; barHandle = subscriber.subscribe(BarConfig.class, &hellip;);
-ConfigHandle&lt;BazConfig&gt; bazHandle = subscriber.subscribe(BazConfig.class, &hellip;);
-</pre>
+ConfigHandle<FooConfig> fooHandle = subscriber.subscribe(FooConfig.class, &hellip;);
+ConfigHandle<BarConfig> barHandle = subscriber.subscribe(BarConfig.class, &hellip;);
+ConfigHandle<BazConfig> bazHandle = subscriber.subscribe(BazConfig.class, &hellip;);
+{% endhighlight %}</pre>
       </td>
     </tr>
   </tbody>
@@ -278,7 +275,7 @@ In addition, your system may need that the configs are updated
 to the same <strong>generation</strong>.
 </p>
   {% include note.html content="A generation is a monotonically increasing number which is increased
-  each time an application is deployed with <code>vespa-deploy</code>.
+  each time an application is deployed with <code>vespa deploy</code>.
   Certain applications may require that all configs are of the same generation to ensure consistency,
   especially container-like applications.
   All configs subscribed to by a ConfigSubscriber are guaranteed to be of the same generation."%}
@@ -295,24 +292,24 @@ named <em>derived1</em> and <em>derived2</em>:
     <tr>
       <th>C++</th>
       <td>
-        <pre>
+        <pre>{% highlight xml %}
 ConfigSubscriber initialSubscriber;
-ConfigHandle&lt;InitialConfig&gt;::UP initialHandle = subscriber.subscribe&lt;InitialConfig&gt;(&hellip;);
+ConfigHandle<InitialConfig>::UP initialHandle = subscriber.subscribe<InitialConfig>(&hellip;);
 while (!subscriber.nextConfig()); // Ensure that we actually get initial config.
-std::auto_ptr&lt;InitialConfig&gt; initialConfig = initialHandle-&gt;getConfig();
+std::auto_ptr<InitialConfig> initialConfig = initialHandle-&gt;getConfig();
 
 ConfigSubscriber subscriber;
-&hellip; = subscriber.subscribe&lt;InitialConfig&gt;(&hellip;);
-&hellip; = subscriber.subscribe&lt;DerivedConfig&gt;(initialConfig-&gt;derived1);
-&hellip; = subscriber.subscribe&lt;DerivedConfig&gt;(initialConfig-&gt;derived1);
-        </pre>
+&hellip; = subscriber.subscribe<InitialConfig>(&hellip;);
+&hellip; = subscriber.subscribe<DerivedConfig>(initialConfig-&gt;derived1);
+&hellip; = subscriber.subscribe<DerivedConfig>(initialConfig-&gt;derived1);
+        {% endhighlight %}</pre>
       </td>
     </tr><tr>
       <th>Java</th>
       <td>
-        <pre>
+        <pre>{% highlight xml %}
 ConfigSubscriber initialSubscriber;
-ConfigHandle&lt;InitialConfig&gt; initialHandle = subscriber.subscribe(InitialConfig.class, &hellip;);
+ConfigHandle<InitialConfig> initialHandle = subscriber.subscribe(InitialConfig.class, &hellip;);
 while (!subscriber.nextConfig()); // Ensure that we actually get initial config.
 InitialConfig initialConfig = initialHandle.getConfig();
 
@@ -320,7 +317,7 @@ ConfigSubscriber subscriber;
 &hellip; = subscriber.subscribe(InitialConfig.class, &hellip;);
 &hellip; = subscriber.subscribe(DerivedConfig.class, initialConfig.derived1);
 &hellip; = subscriber.subscribe(DerivedConfig.class, initialConfig.derived1);
-        </pre>
+        {% endhighlight %}</pre>
       </td>
     </tr>
   </tbody>
@@ -356,11 +353,11 @@ It then provides one method, <code>getConfigs(ConfigKeySet)</code>.
 The method returns a ConfigSnapshot of the next generation of bootstrap configs or derived configs.
 </p><p>
 To create the ConfigRetriever, you must first populate a set of bootstrap configs:
-<pre>
+<pre>{% highlight xml %}
 ConfigKeySet bootstrapKeys;
-bootstrapKeys.add&lt;BootstrapFooConfig&gt;(configId);
-bootstrapKeys.add&lt;BootstrapBarConfig&gt;(configId);
-</pre>
+bootstrapKeys.add<BootstrapFooConfig>(configId);
+bootstrapKeys.add<BootstrapBarConfig>(configId);
+{% endhighlight %}</pre>
 The bootstrap configs are typically configs that will always be needed by your application.
 Once you have defined your set,
 you can create the retriever and fetch a ConfigSnapshot of the bootstrap configs:
@@ -371,11 +368,11 @@ ConfigSnapshot bootstrapConfigs = retriever.getConfigs();
 The ConfigSnapshot contains the bootstrap config,
 and you may use that to fetch the individual configs.
 You need to provide the config id and the type in order for the snapshot to know which config to look for:
-<pre>
+<pre>{% highlight xml %}
 if (!bootstrapConfigs.empty()) {
-    std::auto_ptr&lt;BootstrapFooConfig&gt; bootstrapFoo = bootstrapConfigs.getConfig&lt;BootstrapFooConfig&gt;(configId);
-    std::auto_ptr&lt;BootstrapBarConfig&gt; bootstrapBar = bootstrapConfigs.getConfig&lt;BootstrapBarConfig&gt;(configId);
-</pre>
+    std::auto_ptr<BootstrapFooConfig> bootstrapFoo = bootstrapConfigs.getConfig<BootstrapFooConfig>(configId);
+    std::auto_ptr<BootstrapBarConfig> bootstrapBar = bootstrapConfigs.getConfig<BootstrapBarConfig>(configId);
+{% endhighlight %}</pre>
 <p>
 The snapshot returned is empty if the retriever was unable to get the configs.
 In that case, you can try calling the same method again.
@@ -384,12 +381,12 @@ Once you have the bootstrap configs, you know the config ids for the
 other components that you should subscribe for,
 and you can define a new key set.
 Let's assume that bootstrapFoo contains an array of config ids we should subscribe for.
-<pre>
+<pre>{% highlight xml %}
 ConfigKeySet pluginKeySet;
 for (size_t i = 0; i &lt; (*bootstrapFoo).pluginConfigId.size; i++) {
-    pluginKeySet.add&lt;PluginConfig&gt;((*bootstrapFoo).pluginConfigId[i]);
+    pluginKeySet.add<PluginConfig>((*bootstrapFoo).pluginConfigId[i]);
 }
-</pre>
+{% endhighlight %}</pre>
 <p>
 In this example we know the type of config requested, but this could
 be done in another way letting the plugin add keys to the set.

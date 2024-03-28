@@ -1,5 +1,5 @@
 ---
-# Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+# Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 title: "News Recommendation Tutorial - parent child and tensor ranking"
 redirect_from:
 - /documentation/tutorials/news-7-recommendation-with-parent-child.html
@@ -173,7 +173,7 @@ and we can reference this as `attribute(global_category_ctrs)` during ranking.
 
 Up until this point, we've only used tensors as storage.
 We used tensors to hold news and user embeddings,
-and Vespa used these tensors to calculate the euclidean distances in nearest-neighbor searches.
+and Vespa used these tensors to calculate the dot product in nearest-neighbor searches.
 
 However, Vespa has a [rich language](../tensor-user-guide.html#ranking-with-tensors)
 to perform calculations with tensors.
@@ -317,10 +317,8 @@ Feed the created feed files:
 <div class="pre-parent">
   <button class="d-icon d-duplicate pre-copy-button" onclick="copyPreContent(this)"></button>
 <pre data-test="exec">
-$ ./vespa-feed-client-cli/vespa-feed-client \
-  --verbose --file mind/global_category_ctr.json --endpoint http://localhost:8080
-$ ./vespa-feed-client-cli/vespa-feed-client \
-  --verbose --file mind/news_category_ctr_update.json --endpoint http://localhost:8080
+$ vespa feed mind/global_category_ctr.json --target http://localhost:8080
+$ vespa feed mind/news_category_ctr_update.json --target http://localhost:8080
 </pre>
 </div>
 

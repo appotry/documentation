@@ -1,5 +1,5 @@
 ---
-# Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+# Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 title: "Rank Feature Configuration"
 redirect_from:
 - /documentation/reference/rank-feature-configuration.html
@@ -34,10 +34,11 @@ rank-properties {
 ranking-profile my-profile inherits default {
   rank-properties {
     fieldMatch(title).maxAlternativeSegmentations: 10
-    fieldmatch(title).maxOccurrences: 5
+    fieldMatch(title).maxOccurrences: 5
     fieldMatch(description).maxOccurrences: 20
     bm25(title).k1: 1.5
     bm25(title).b: 0.85
+    bm25(title).averageFieldLength: 200
     elementSimilarity(tags).output.sumWeightSquared: "sum((0.35*p+0.15*o+0.30*q+0.20*f)*w^2)"
     elementSimilarity(tags).output.avgWeightSquared: "avg((0.35*p+0.15*o+0.30*q+0.20*f)*w^2)"
     elementSimilarity(tags).output.sumWeight: "sum(w)"
@@ -66,7 +67,7 @@ ranking-profile my-profile inherits default {
   <td>5</td>
   <td><p id="term">The number of terms for which this is included in the rank features dump in the summary</p></td></tr>
 
-<tr><td rowspan="2"><a href="rank-features.html#bm25">bm25</a></td>
+<tr><td rowspan="3"><a href="rank-features.html#bm25">bm25</a></td>
   <td>k1</td>
   <td>1.2</td>
   <td><p id="bm25">Used to limit how much a single query term can affect the score for a document.</p></td></tr>
@@ -75,6 +76,16 @@ ranking-profile my-profile inherits default {
   <td>b</td>
   <td>0.75</td>
   <td>Used to control the effect of the field length compared to the average field length.</td></tr>
+
+<tr>
+  <td>averageFieldLength</td>
+  <td>Automatically calculated per field per content node for <a href="services-content.html#document">indexed search</a>,
+      100 for <a href="../streaming-search.html">streaming search</a>.</td>
+  <td>Used to set an explicit value for the average field length (in number of words).
+      When using <a href="../streaming-search.html#differences-in-streaming-search">streaming search</a>,
+      no index structures are generated and the average field length is not automatically calculated.
+      Instead, manually set an average field length for a more precise bm25 score.
+  </td></tr>
 
 <tr><td rowspan="10">fieldMatch</td>
   <td>proximityLimit

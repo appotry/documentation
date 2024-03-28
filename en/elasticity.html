@@ -1,5 +1,5 @@
 ---
-# Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+# Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 title: "Content Cluster Elasticity"
 redirect_from:
 - /documentation/elastic-vespa.html
@@ -17,7 +17,7 @@ redirect_from:
      alt="A cluster growing in two dimensions" />
 
 <p>
-  Documents are managed by Vespa in chunked called <a href="#buckets">buckets</a>.
+  Documents are managed by Vespa in chunks called <a href="#buckets">buckets</a>.
   The size and number of buckets are completely managed by Vespa and there is never any
   need to manually control sharding.
 </p>
@@ -43,7 +43,7 @@ redirect_from:
 <p>
   The auto-elasticity is configured for a normal fail-safe operation,
   but there are tradeoffs like recovery speed and resource usage.
-  Learn more in <a href="operations/admin-procedures.html#content-cluster-configuration">procedures</a>.
+  Learn more in <a href="/en/operations-selfhosted/admin-procedures.html#content-cluster-configuration">procedures</a>.
 </p>
 
 
@@ -54,7 +54,7 @@ redirect_from:
   tag of the <a href="reference/services-content.html">content</a> cluster in
   <a href="reference/services.html">services.xml</a>
   and <a href="application-packages.html#deploy">redeploy</a>.
-  Read more in <a href="operations/admin-procedures.html">procedures</a>.
+  Read more in <a href="/en/operations-selfhosted/admin-procedures.html">procedures</a>.
 </p>
 
 <p>
@@ -118,7 +118,7 @@ redirect_from:
   <th>Cluster upgrade</th>
   <td>
     With multiple groups it becomes safe to take out a full group for upgrade instead of just one a node at a time.
-    <a href="operations/live-upgrade.html">Read more</a>.
+    <a href="/en/operations-selfhosted/live-upgrade.html">Read more</a>.
   </td>
 </tr><tr>
   <th style="white-space: nowrap">Query throughput</th>
@@ -137,14 +137,64 @@ redirect_from:
 </tbody>
 </table>
 <p>
-  Data redistribution after changing cluster topology is automatic,
-  However, if you change between a grouped and non-grouped configuration,
-  there will be a period of reduced query coverage during the transition.
-  Read more in <a href="performance/sizing-examples.html">sizing examples</a>.
-</p>
-<p>
   Tuning group sizes and node resources enables applications to easily find the latency/cost sweet spot,
   the elasticity operations are automatic and queries and writes work as usual with no downtime.
+</p>
+
+
+
+<h2 id="changing-topology">Changing topology</h2>
+<p>
+  A Vespa elasticity feature is the ability to change topology (i.e. grouped distribution) without service disruption.
+  This is a live change, and will auto-redistribute documents to the new topology.
+</p>
+<p>
+  Also read <a href="/en/operations-selfhosted/admin-procedures.html#topology-change">topology change</a>
+  if running Vespa self-hosted - the below steps are general for all hosting options.
+</p>
+
+
+<h3 id="replicas">Replicas</h3>
+<p>
+  When changing topology, pay attention to the <a href="/en/reference/services-content.html#min-redundancy">min-redundancy</a> setting -
+  this setting configures a <em>minimum</em> number of replicas in a cluster,
+  the <em>actual</em> number is topology dependent - example:
+</p>
+<p>
+  A flat cluster with min-redundancy n=2 and 15 nodes is changed into a grouped cluster with 3 groups with 5 nodes each
+  (total node count and n is kept unchanged).
+  In this case, the actual redundancy will be 3 after the change,
+  as each of the 3 groups will have at least 1 replica for full query coverage.
+  The practical consequence is that disk and memory requirements per node <em>increases</em> due to the change to topology.
+  It is therefore important to calculate the actual replica count before reconfiguring topology.
+</p>
+
+
+<h3 id="query-coverage">Query coverage</h3>
+<p>
+  Changing topology might cause query coverage loss in the transition, unless steps taken in the right order.
+  If full coverage is not important, just make the change and wait for document redistribution to complete.
+</p>
+<p>
+  To keep full query coverage, make sure not to change both group size and number of groups at the same time:
+</p>
+<ol>
+  <li>
+    To add nodes for more data, or to have less data per node, increase group size.
+    E.g., in a 2-row cluster with 8 nodes per row, add 4 nodes for a 25% capacity increase with 10 nodes per row.
+  </li>
+  <li>
+    If the goal is to add query capacity, add one or more rows, with the same node count as existing row(s).
+    A flat cluster is the same as one row - if the flat cluster has 8 nodes,
+    change to a grouped cluster with 2 rows of 8 nodes per group.
+    This will add an empty row, which is put in query serving once populated.
+  </li>
+</ol>
+<p>
+  In short, if the end-state means both changing number of rows and node count per row,
+  do this as separate steps, as a combination of the above.
+  Between each step, wait for document redistribution to complete using the <code>merge_bucket.pending</code> metric -
+  see <a href="https://cloud.vespa.ai/en/index-bootstrap">example</a>.
 </p>
 
 
@@ -159,7 +209,7 @@ redirect_from:
 <p>
   A document Put or Update is sent to all replicas of the bucket with the document.
   If bucket replicas are out of sync, a bucket merge operation is run to re-sync the bucket.
-  A bucket contains <a href="operations/admin-procedures.html#data-retention-vs-size">tombstones</a>
+  A bucket contains <a href="/en/operations-selfhosted/admin-procedures.html#data-retention-vs-size">tombstones</a>
   of recently removed documents.
 </p>
 

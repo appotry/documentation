@@ -1,4 +1,4 @@
-# Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+# Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 # Welcome to Jekyll!
 #
 # This config file is meant for settings that affect your whole blog, values
@@ -29,6 +29,9 @@ markdown: kramdown
 plugins:
   - jekyll-feed
   - jekyll-redirect-from
+
+kramdown:
+  smart_quotes: ["apos", "apos", "quot", "quot"]
 
 # Exclude from processing.
 # The following items will not be processed, by default. Create a custom list
@@ -64,6 +67,12 @@ search:
     - url: https://vespacloud-docsearch.vespa-team.aws-eu-west-1a.z.vespa-app.cloud/
       indexes:
         - open_index.json
+    - url: https://enclave.vespacloud-docsearch.vespa-team.aws-us-east-1c.z.vespa-app.cloud/
+      indexes:
+        - open_index.json
+    - url: https://enclave.vespacloud-docsearch.vespa-team.gcp-us-central1-f.z.vespa-app.cloud/
+      indexes:
+        - open_index.json
 
 defaults:
   -
@@ -74,4 +83,4 @@ defaults:
       index : true
 
 variables:
-  vespa_version: "8.91.2"
+  vespa_version: "8.321.19"

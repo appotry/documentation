@@ -1,5 +1,5 @@
 ---
-# Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+# Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 title: "Container Components"
 redirect_from:
 - /documentation/jdisc/container-components.html
@@ -102,7 +102,7 @@ public void deconstruct() {
 <p>
   If your component class needs more than one public constructor,
   the one to be used by the container must be annotated with <code>@com.yahoo.component.annotation.Inject</code> from
-  <code><a href="https://search.maven.org/artifact/com.yahoo.vespa/annotations">annotations</a></code>.
+  <a href="https://search.maven.org/artifact/com.yahoo.vespa/annotations">annotations</a>.
 </p>
 
 
@@ -227,7 +227,7 @@ public void deconstruct() {
   Set up a Vespa instance using the <a href="../vespa-quick-start.html">quick start</a>.
   Once the component and the config are added to the application package,
   it can be <a href="../application-packages.html#deploy">deployed</a>
-  by running <code>vespa-deploy</code>.
+  by running <code>vespa deploy</code>.
   These steps will copy any changed bundles to the nodes in the cluster which needs them
   and switch queries over to running the new component versions.
 </p><p>
@@ -363,7 +363,7 @@ major.minor.micro.qualifier
 <h3 id="container-start">Container start</h3>
 <p>
   If there is some error in the application package,
-  it will usually be detected during the <code>vespa-deploy prepare</code> step and cause an error message.
+  it will usually be detected during the <code>vespa prepare</code> step and cause an error message.
   However, some classes of errors are only detected once the application is deployed.
   When redeploying an application, it is therefore recommended watching the vespa log by running:
 </p>
@@ -376,7 +376,7 @@ Switched to the latest deployed set of handlers...;
 </pre>
 <p>
   If this message does not appear after a reasonable amount of time
-  after completion of <code>vespa-deploy activate</code>,
+  after completion of <code>vespa activate</code>,
   one will see some errors or warnings instead, that will help debug the application.
 </p>
 
@@ -387,7 +387,7 @@ Switched to the latest deployed set of handlers...;
   Construction can fail - to debug, enable more logging (replace "container" as needed with container id):
 </p>
 <pre>
-$ <a href="../reference/vespa-cmdline-tools.html#vespa-logctl">vespa-logctl</a> container:com.yahoo.container.di.componentgraph.core.ComponentNode debug=on
+$ <a href="/en/operations-selfhosted/vespa-cmdline-tools.html#vespa-logctl">vespa-logctl</a> container:com.yahoo.container.di.componentgraph.core.ComponentNode debug=on
   .com.yahoo.container.di.componentgraph.core.ComponentNode   ON  ON  ON  ON  ON  ON  ON OFF
 </pre>
 <p>

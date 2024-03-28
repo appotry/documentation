@@ -1,5 +1,5 @@
 ---
-# Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+# Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 title: "Reads and writes"
 redirect_from:
 - /documentation/reads-and-writes.html
@@ -45,14 +45,14 @@ redirect_from:
 <li>
   Applications can <a href="documents.html#document-expiry">auto-expire documents</a>.
   This feature also blocks PUTs to documents that are already expired -
-  see <a href="indexing.html#document-selection">indexing</a> and
+  see <a href="/en/operations-selfhosted/routing.html#document-selection">indexing</a> and
   <a href="reference/services-content.html#documents">document selection</a>.
   This is a common problem when feeding test data with timestamps,
   and the writes a silently dropped.
 </li>
 </ul>
 <p>
-  Also see <a href="operations/admin-procedures.html#troubleshooting">troubleshooting</a>.
+  Also see <a href="/en/operations-selfhosted/admin-procedures.html#troubleshooting">troubleshooting</a>.
 </p>
 
 
@@ -70,6 +70,12 @@ redirect_from:
   <th>Put</th>
   <td><p>
     Write a document by ID - a document is overwritten if a document with the same document ID exists.
+    </p><p>
+    Puts can have <a href="document-v1-api-guide.html#conditional-writes">conditions</a>
+    for test-and-set use cases. Conditions can be combined with
+    <a href="document-v1-api-guide.html#create-if-nonexistent">create if nonexistent</a>,
+    which causes the condition to be ignored if the document does not already exist.
+    </p><p>
   </p></td>
 </tr><tr>
   <th>Remove</th>
@@ -77,13 +83,15 @@ redirect_from:
     <p>
     Remove a document by ID.
     If the document to be removed is not found, it is not considered a failure.
-    Read more about <a href="operations/admin-procedures.html#data-retention-vs-size">data-retention</a>.
+    Read more about <a href="/en/operations-selfhosted/admin-procedures.html#data-retention-vs-size">data-retention</a>.
     Also see <a href="operations/batch-delete.html">batch deletes</a>.
-    </p>
-    <p>
-      A removed document is written as a tombstone, and later garbage collected -
-      see <a href="reference/services-content.html#removed-db-prune-age">removed-db / prune /age</a>.
-      Vespa does not retain, nor return, the document data of removed documents.
+    </p><p>
+    Removes can have <a href="document-v1-api-guide.html#conditional-writes">conditions</a>
+    for test-and-set use cases.
+    </p><p>
+    A removed document is written as a tombstone, and later garbage collected -
+    see <a href="reference/services-content.html#removed-db-prune-age">removed-db / prune /age</a>.
+    Vespa does not retain, nor return, the document data of removed documents.
     </p>
   </td>
 </tr><tr>
@@ -108,26 +116,26 @@ redirect_from:
       <tr>
         <td><strong>All field types</strong></td>
         <td><ul>
-            <li><code><a href="reference/document-json-format.html#assign">assign</a></code> (may also be used to clear fields)</li>
+            <li><a href="reference/document-json-format.html#assign">assign</a> (may also be used to clear fields)</li>
         </ul></td>
       </tr><tr>
         <td><strong>Numeric field types</strong></td>
         <td><ul>
-            <li><code><a href="reference/document-json-format.html#arithmetic">increment</a></code>.
+            <li><a href="reference/document-json-format.html#arithmetic">increment</a>.
               Also see <a href="reference/schema-reference.html#weightedset">auto-generate weightedset keys</a></li>
-            <li><code><a href="reference/document-json-format.html#arithmetic">decrement</a></code></li>
-            <li><code><a href="reference/document-json-format.html#arithmetic">multiply</a></code></li>
-            <li><code><a href="reference/document-json-format.html#arithmetic">divide</a></code></li>
+            <li><a href="reference/document-json-format.html#arithmetic">decrement</a></li>
+            <li><a href="reference/document-json-format.html#arithmetic">multiply</a></li>
+            <li><a href="reference/document-json-format.html#arithmetic">divide</a></li>
         </ul></td>
       </tr><tr>
         <td><strong>Composite types</strong></td>
         <td><ul>
-            <li><code><a href="reference/document-json-format.html#add">add</a></code>
+            <li><a href="reference/document-json-format.html#add">add</a>
               For <em>array</em> and <em>weighted set</em>.
               To put into a <em>map</em>,
               see the <a href="reference/document-json-format.html#assign">assign</a> section</li>
-            <li><code><a href="reference/document-json-format.html#composite-remove">remove</a></code></li>
-            <li><code><a href="reference/document-json-format.html#match">match</a></code>
+            <li><a href="reference/document-json-format.html#composite-remove">remove</a></li>
+            <li><a href="reference/document-json-format.html#match">match</a>
               Pick element from collection, then apply given operation to matched element</li>
             <li><a href="reference/document-json-format.html#fieldpath">
               accessing elements within a composite field using fieldpaths</a></li>
@@ -135,11 +143,11 @@ redirect_from:
       </tr><tr>
         <td><strong>Tensor types</strong></td>
         <td><ul>
-            <li><code><a href="reference/document-json-format.html#tensor-modify">modify</a></code>
+            <li><a href="reference/document-json-format.html#tensor-modify">modify</a>
               Modify individual cells in a tensor - can replace, add or multiply cell values</li>
-            <li><code><a href="reference/document-json-format.html#tensor-add">add</a></code>
+            <li><a href="reference/document-json-format.html#tensor-add">add</a>
               Add cells to mapped or mixed tensors</li>
-            <li><code><a href="reference/document-json-format.html#tensor-remove">remove</a></code>
+            <li><a href="reference/document-json-format.html#tensor-remove">remove</a>
               Remove cells from mapped or mixed tensors</li>
         </ul></td>
       </tr>
@@ -153,8 +161,7 @@ redirect_from:
 
 <h2 id="api-and-utilities">API and utilities</h2>
 <p>
-  Documents are created using <a href="reference/document-json-format.html">JSON</a> or in
-  <a href="https://github.com/vespa-engine/vespa/blob/master/document/src/main/java/com/yahoo/document/Document.java">Java</a>:
+  Also see the <a href="reference/document-json-format.html">JSON Document format</a>:
 </p>
 <table class="table">
   <thead><tr><th>API / util</th><th>Description</th></tr></thead>
@@ -163,37 +170,46 @@ redirect_from:
     <td><a href="vespa-cli.html">Vespa CLI</a></td>
     <td>
       Command-line tool to
-      <code>get</code>, <code>put</code>, <code>remove</code>, <code>update</code>, <code>visit</code>.
+      <code>get</code>, <code>put</code>, <code>remove</code>, <code>update</code>, <code>feed</code>, <code>visit</code>.
     </td>
   </tr>
   <tr>
     <td><a href="reference/document-v1-api-reference.html">/document/v1/</a></td>
     <td>API for <code>get</code>, <code>put</code>, <code>remove</code>, <code>update</code>, <code>visit</code>.</td>
-  </tr><tr>
-    <td><a href="vespa-feed-client.html">vespa-feed-client</a></td>
-    <td>
-      <ul>
-        <li>Java library and command line client for feeding document operations using /document/v1/ over HTTP/2</li>
-        <li>Asynchronous, high-performance Java implementation, with retries and dynamic throttling</li>
-        <li>Simpler alternative to the Vespa HTTP client (below)</li>
-        <li>Supports a JSON array of feed operations, as well as JSONL: one operation JSON per line</li>
-      </ul>
-    </td>
-  </tr><tr>
+  </tr>
+  <tr>
     <td style="white-space: nowrap"><a href="document-api-guide.html">Java Document API</a></td>
-    <td>Provides direct read-and write access to Vespa documents using Vespa's internal communication layer.
+    <td>
+      Provides direct read-and write access to Vespa documents using Vespa's internal communication layer.
       Use this when accessing documents from Java components in Vespa
       such as <a href="searcher-development.html">searchers</a> and
-      <a href="document-processing.html">document processors</a>.</td>
-  </tr><tr>
-    <td><a href="reference/vespa-cmdline-tools.html#vespa-feeder">vespa-feeder</a></td>
-    <td>Utility to feed data with high performance.
-      <a href="reference/vespa-cmdline-tools.html#vespa-get">vespa-get</a> gets single documents,
-      <a href="reference/vespa-cmdline-tools.html#vespa-visit">vespa-visit</a> gets multiple.
-      Use the <code>vespa-feed-client</code> instead.</td>
+      <a href="document-processing.html">document processors</a>.
+      See the <a href="https://github.com/vespa-engine/vespa/blob/master/document/src/main/java/com/yahoo/document/Document.java">
+      Document</a> class.
+    </td>
   </tr>
   </tbody>
 </table>
+<p>Advanced / debugging tools:</p>
+<ul>
+  <li>
+    <a href="vespa-feed-client.html">vespa-feed-client</a>:
+    Java library and command line client for feeding document operations
+    using <a href="reference/document-v1-api-reference.html">/document/v1/</a>.
+  </li>
+  <li>
+    <a href="/en/operations-selfhosted/vespa-cmdline-tools.html#vespa-feeder">vespa-feeder</a>
+    is a utility for feeding over the <a href="/en/operations-selfhosted/routing.html">Message Bus</a>.
+  </li>
+  <li>
+    <a href="/en/operations-selfhosted/vespa-cmdline-tools.html#vespa-get">vespa-get</a> gets single documents
+    over the <a href="/en/operations-selfhosted/routing.html">Message Bus</a>.
+  </li>
+  <li>
+    <a href="/en/operations-selfhosted/vespa-cmdline-tools.html#vespa-visit">vespa-visit</a> gets multiple documents
+    over the <a href="/en/operations-selfhosted/routing.html">Message Bus</a>.
+  </li>
+</ul>
 
 
 
@@ -204,12 +220,12 @@ redirect_from:
 </p>
 <img src="/assets/img/elastic-feed-container.svg" width="345" height="auto" alt="Feed with feed client"/>
 <p>
-  Alternatively, use <a href="reference/vespa-cmdline-tools.html#vespa-feeder">vespa-feeder</a> to feed files
+  Alternatively, use <a href="/en/operations-selfhosted/vespa-cmdline-tools.html#vespa-feeder">vespa-feeder</a> to feed files
   or the <a href="document-api-guide.html">Java Document API</a>.
 </p>
 <img src="/assets/img/elastic-feed-vespafeeder.svg" width="345" height="auto" alt="Feed with vespafeeder"/>
 <p>
-  <a href="indexing.html">Indexing</a>
+  <a href="/en/operations-selfhosted/routing.html#routing-for-indexing">Indexing</a>
   and/or <a href="document-processing.html">document processing</a>
   is a chain of processors that manipulate documents before they are stored.
   Document processors can be user defined.
@@ -225,7 +241,7 @@ redirect_from:
 
 <h2 id="further-reading">Further reading</h2>
 <ul>
-  <li><a href="content/visiting.html">Visiting</a></li>
+  <li><a href="visiting.html">Visiting</a></li>
   <li><a href="document-v1-api-guide.html">/document/v1/ API guide</a></li>
   <li><a href="reference/document-v1-api-reference.html">/document/v1/ API reference</a></li>
 </ul>

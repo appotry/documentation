@@ -1,12 +1,12 @@
 ---
-# Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+# Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 title: "Parent/Child"
 redirect_from:
 - /documentation/parent-child.html
 ---
 
 <p>
-  Using <a href="reference/schema-reference.html#type:reference">document references</a>,
+  Using <a href="reference/schema-reference.html#reference">document references</a>,
   documents can have parent/child relationships.
   Use this to join data by <a href="reference/schema-reference.html#import-field">importing</a>
   fields from parent documents. Features:
@@ -16,11 +16,15 @@ redirect_from:
   <li>no de-normalization needed - simplifies data updates and atomic update into all children</li>
   <li>search child documents based on properties from parent documents</li>
   <li>search parent documents only</li>
-  <li>use imported fields as part of <a href="content/visiting.html">visiting</a> and
+  <li>use imported fields as part of <a href="visiting.html">visiting</a> and
     <a href="documents.html#document-expiry">garbage collection</a> with
     <a href="reference/document-select-language.html#using-imported-fields-in-selections">document
       selection</a> expressions</li>
 </ul>
+<p>
+  Parent/child relationships are not supported in
+  <a href="streaming-search.html#differences-in-streaming-search">streaming search</a>.
+</p>
 <p>
   An alternative to parent documents is using arrays or maps of struct fields - this guide covers both.
 </p><p>
@@ -37,7 +41,7 @@ redirect_from:
 <h2 id="parent-documents">Parent documents</h2>
 <p>
   Model parent-child relationships by using
-  <a href="reference/schema-reference.html#type:reference">references</a>
+  <a href="reference/schema-reference.html#reference">references</a>
   to <a href="reference/services-content.html#document">global documents</a>.
   This is like foreign keys in a relational database.
   Parents can have parents.
@@ -66,7 +70,7 @@ redirect_from:
   global documents are synchronized - refer to <a href="elasticity.html">content cluster elasticity</a>.
 </p>
 {% include important.html  content="
-Cyclic or self <a href='reference/schema-reference.html#type:reference'>references</a> are not allowed."%}
+Cyclic or self <a href='reference/schema-reference.html#reference'>references</a> are not allowed."%}
 <p>
   Performance notes:
 </p>

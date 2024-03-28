@@ -1,5 +1,5 @@
 ---
-# Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+# Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 title: "News search and recommendation tutorial - getting started on Docker"
 redirect_from:
 - /documentation/tutorials/news-1-getting-started.html
@@ -34,7 +34,7 @@ In the next part of the tutorial, we'll start developing our application.
 {% include pre-req.html memory="4 GB" extra-reqs='
 <li>Python3 for converting the dataset to Vespa JSON.</li>
 <li><code>curl</code> to download the dataset and run the Vespa health-checks.</li>
-<li><a href="https://openjdk.java.net/projects/jdk/17/">Java 17</a> in part 6.</li>
+<li><a href="https://openjdk.org/projects/jdk/17/" data-proofer-ignore>Java 17</a> in part 6.</li>
 <li><a href="https://maven.apache.org/install.html">Apache Maven</a> in part 6.</li>' %}
 
 {% include note.html content='4 GB Docker memory is sufficient for the demo dataset in part 2.
@@ -63,7 +63,7 @@ $ brew install vespa-cli
 
 This tutorial has a [companion sample application](https://github.com/vespa-engine/sample-apps/tree/master/news).
 Throughout the tutorial we will be using support code from this application.
-Also, the final state of each tutorial can be found in the various `app-...` sub-directories.
+Also, the final state of each tutorial can be found in the various `app-...` subdirectories.
 
 Let's start by cloning the sample application:
 
@@ -151,43 +151,25 @@ application changes in this manner.
 
 ## Feeding to Vespa
 
-We must index data before we can search for it. This is called "feeding", and
-we'll get back to that in more detail in the next part of the tutorial. For
-now, to test that everything is up and running, we'll feed in a single test
-document. 
-
-The first example uses the [vespa-feed-client](../vespa-feed-client.html) to index a document:
-
-<div class="pre-parent">
-  <button class="d-icon d-duplicate pre-copy-button" onclick="copyPreContent(this)"></button>
-<pre data-test="exec">
-$ curl -L -o vespa-feed-client-cli.zip \
-  "https://search.maven.org/remotecontent?filepath=com/yahoo/vespa/vespa-feed-client-cli/{{site.variables.vespa_version}}/vespa-feed-client-cli-{{site.variables.vespa_version}}-zip.zip"
-$ unzip vespa-feed-client-cli.zip
-</pre>
-</div>
-
-We can also feed using [Vespa document api](../document-v1-api-guide.html) directly,
-or use the [Vespa CLI](../vespa-cli.html), which also uses the http document api.
-
-This runs the `vespa-feed-client` Java client with the file `doc.json` file.
+We must index data before we can search for it.
+This is called "feeding", and we'll get back to that in more detail in the next part of the tutorial.
+For now, to test that everything is up and running, we'll feed in a single test document:
 <div class="pre-parent">
   <button class="d-icon d-duplicate pre-copy-button" onclick="copyPreContent(this)"></button>
 <pre data-test="exec" >
-$ ./vespa-feed-client-cli/vespa-feed-client \
-  --verbose --file doc.json --endpoint http://localhost:8080
+$ vespa feed -t http://localhost:8080 doc.json
 </pre>
 </div>
 
-This runs the `vespa` cli with the file `doc.json` file. The `-v` option will make vespa-cli
-print the http request:
-
+The `-v` option will make vespa-cli print the http request:
 <div class="pre-parent">
   <button class="d-icon d-duplicate pre-copy-button" onclick="copyPreContent(this)"></button>
 <pre data-test="exec" >
 $ vespa document -v doc.json
 </pre>
 </div>
+
+We can also feed using [Vespa document api](../document-v1-api-guide.html) directly.
 
 Once the feed operation is ack'ed by Vespa, the operation is visible in search.
 
@@ -254,8 +236,8 @@ To stop Vespa, we can run the following commands:
 <div class="pre-parent">
   <button class="d-icon d-duplicate pre-copy-button" onclick="copyPreContent(this)"></button>
 <pre>
-$ docker exec vespa /opt/vespa/bin/vespa-stop-services
-$ docker exec vespa /opt/vespa/bin/vespa-stop-configserver
+$ docker exec vespa vespa-stop-services
+$ docker exec vespa vespa-stop-configserver
 </pre>
 </div>
 
@@ -264,8 +246,8 @@ Likewise, to start the Vespa services:
 <div class="pre-parent">
   <button class="d-icon d-duplicate pre-copy-button" onclick="copyPreContent(this)"></button>
 <pre>
-$ docker exec vespa /opt/vespa/bin/vespa-start-configserver
-$ docker exec vespa /opt/vespa/bin/vespa-start-services
+$ docker exec vespa vespa-start-configserver
+$ docker exec vespa vespa-start-services
 </pre>
 </div>
 
@@ -279,9 +261,9 @@ To wipe the index and restart:
   <button class="d-icon d-duplicate pre-copy-button" onclick="copyPreContent(this)"></button>
 <pre>
 $ docker exec vespa sh -c ' \
-  /opt/vespa/bin/vespa-stop-services && \
-  /opt/vespa/bin/vespa-remove-index -force && \
-  /opt/vespa/bin/vespa-start-services'
+  vespa-stop-services && \
+  vespa-remove-index -force && \
+  vespa-start-services'
 </pre>
 </div>
 
@@ -290,12 +272,12 @@ You can stop and kill the Vespa container application like this:
 <div class="pre-parent">
   <button class="d-icon d-duplicate pre-copy-button" onclick="copyPreContent(this)"></button>
 <pre data-test="after">
-$ docker rm -f vespa
+$ docker stop vespa; docker rm -f vespa
 </pre>
 </div>
 
 This will delete the Vespa application, including all data and configuration. See 
-[container tuning for production](../operations/docker-containers.html). 
+[container tuning for production](/en/operations-selfhosted/docker-containers.html). 
 
 
 ## Conclusion

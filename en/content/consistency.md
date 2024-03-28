@@ -1,5 +1,5 @@
 ---
-# Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+# Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 title: "Vespa Consistency Model"
 redirect_from:
 - /documentation/content/consistency.html
@@ -67,10 +67,6 @@ operation orderings.
 Vespa has support for conditional writes for individual documents through
 test-and-set operations. Multi-document transactions are not supported.
 
-If possible, prefer using conditional updates with `create: true` instead
-of conditional puts. This is because the write repair logic for conditional
-updates is capable of handling data consistency edge cases.
-
 After a successful response, changes to the search indexes are immediately
 visible by default.
 
@@ -78,8 +74,9 @@ visible by default.
 
 Reads are consistent on a best-effort basis and are not guaranteed to be linearizable.
 
-When using a [Get](../reference/document-v1-api-reference.html#get) or [Visit](visiting.html) operation, the client will never observe a partially
-updated document. For these read operations, writes behave as if they are atomic.
+When using a [Get](../reference/document-v1-api-reference.html#get) or [Visit](../visiting.html) operation,
+the client will never observe a partially updated document.
+For these read operations, writes behave as if they are atomic.
 
 Searches may observe partial updates, as updates are not atomic across index
 structures. This can only happen _after_ a write has started, but _before_ it's
@@ -94,7 +91,7 @@ requested document from all divergent replicas. The client then receives the
 version with the newest timestamp.
 
 If replicas diverge during a Visit, the behavior is slightly different between
-the Document V1 API and [vespa-visit](../reference/vespa-cmdline-tools.html#vespa-visit):
+the Document V1 API and [vespa-visit](/en/operations-selfhosted/vespa-cmdline-tools.html#vespa-visit):
 
   * Document V1 will prefer immediately visiting the replica that contains the
     most documents. This means it's possible for a subset of documents in a bucket
@@ -141,4 +138,4 @@ than this TTL should ideally have their indexes removed before being allowed bac
 If not, there is a risk of resurrecting previously removed documents.
 Vespa does not currently detect or handle this scenario automatically.
 
-See the documentation on [data-retention-vs-size](../operations/admin-procedures.html#data-retention-vs-size).
+See the documentation on [data-retention-vs-size](/en/operations-selfhosted/admin-procedures.html#data-retention-vs-size).

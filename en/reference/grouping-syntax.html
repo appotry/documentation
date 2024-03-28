@@ -1,5 +1,5 @@
 ---
-# Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+# Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 title: "Grouping Reference"
 redirect_from:
 - /documentation/reference/grouping-syntax.html
@@ -48,11 +48,11 @@ Groups can contain subgroups (by using <code>each</code> and <code>group</code> 
 and may be nested to any level.
 </p><p>
 Multiple sub-groupings or outputs can be created under the same group level, using multiple parallel <code>each</code>
-or <code>all</code> clauses, and each one may be labelled using <code><a href="#labels">as(mylabel)</a></code>.
+or <code>all</code> clauses, and each one may be labelled using <a href="#labels">as(mylabel)</a>.
 </p><p>
 When grouping results, <em>groups</em> that contain <em>outputs</em>,
 <em>group lists</em> and <em>hit lists</em> are generated.
-Group lists contain sub-groups, and hit lists contain hits that are part of the owning group.
+Group lists contain subgroups, and hit lists contain hits that are part of the owning group.
 </p><p>
 The identity of a group is held by its <em>id</em>.
 Scalar identities such as long, double and string, are directly available from the <em>id</em>,
@@ -64,16 +64,19 @@ Refer to the <a href="default-result-format.html">result format reference</a>.
 <h3 id="multivalue-attributes">Multivalue attributes</h3>
 <p>
 A <a href="../schemas.html#field">multivalue</a> attribute is a
-<a href="schema-reference.html#type:weightedset">weighted set</a>,
-<a href="schema-reference.html#type:array">array</a> or
-<a href="schema-reference.html#type:map">map</a>. <!-- ToDo: check if more. link to schema -->
+<a href="schema-reference.html#weightedset">weighted set</a>,
+<a href="schema-reference.html#array">array</a> or
+<a href="schema-reference.html#map">map</a>. <!-- ToDo: check if more. link to schema -->
 Most grouping functions will just handle the elements of
 multivalued attributes separately, as if they were all individual values in separate documents.
+If you are grouping over array of struct or maps, scoping will be used to preserve structure.
+Each entry in the array/map will be treated as a separate sub-document.
 The following syntax can be used when grouping on <em>map</em> attribute fields.
-</p><p>
-Group on map keys:
 </p>
+<p>Group on map keys:</p>
 <pre>all( group(mymap.key) each(output(count())) )</pre>
+<p>Group on map keys then on map values:</p>
+<pre>all( group(mymap.key) each( group(mymap.value) each(output(count())) ))</pre>
 <p>Group on values for key <em>my_key</em>:</p>
 <pre>all( group(my_map{"my_key"}) each(output(count())) )</pre>
 <p>Group on struct field <em>my_field</em> referenced in map element <em>my_key</em>:</p>
@@ -85,8 +88,13 @@ Note that the key source attribute must be single value and have the same data t
 </p>
 <pre>all( group(my_map{attribute(my_key_source)}) each(output(count())) )</pre>
 <!-- ToDo add weightedset doc <strong>Note:</strong> This syntax is map-specific, it does NOT apply to weighted sets. -->
+<p>Group on array of integers field:</p>
+<pre>all( group(my_array) each(output(count())) )</pre>
+<p>Group on struct field <em>my_field</em> in the <em>my_array</em> array of structs:</p>
+<pre>all( group(my_array.my_field) each(output(count())) )</pre>
+
 <p>
-<a href="schema-reference.html#type:tensor">Tensors</a> can not be used in grouping.
+<a href="schema-reference.html#tensor">Tensors</a> can not be used in grouping.
 </p>
 
 
@@ -113,7 +121,7 @@ returning only first <em>n</em> groups as specified by <code>order</code>:
     when <code>max</code> or <code>min</code> is used
 </li><li>
     Default order, <code>-max(relevance())</code>, <strong>does not</strong> require use of
-    <code><a href="#precision">precision</a></code>
+    <a href="#precision">precision</a>
 </li></ul>
 
 
@@ -140,13 +148,13 @@ E.g. one may simultaneously move both to the next page of one list, and the prev
   and they replace whatever continuations they collide with."%}
 <p>
 If working programmatically with grouping, find the
-<code><a href="https://javadoc.io/doc/com.yahoo.vespa/container-search/latest/com/yahoo/search/grouping/Continuation.html">Continuation</a></code>
+<a href="https://javadoc.io/doc/com.yahoo.vespa/container-search/latest/com/yahoo/search/grouping/Continuation.html">Continuation</a>
 objects within
-<code><a href="https://javadoc.io/doc/com.yahoo.vespa/container-search/latest/com/yahoo/search/grouping/result/RootGroup.html">RootGroup</a></code>,
-<code><a href="https://javadoc.io/doc/com.yahoo.vespa/container-search/latest/com/yahoo/search/grouping/result/GroupList.html">GroupList</a></code> and
-<code><a href="https://javadoc.io/doc/com.yahoo.vespa/container-search/latest/com/yahoo/search/grouping/result/HitList.html">HitList</a></code>
+<a href="https://javadoc.io/doc/com.yahoo.vespa/container-search/latest/com/yahoo/search/grouping/result/RootGroup.html">RootGroup</a>,
+<a href="https://javadoc.io/doc/com.yahoo.vespa/container-search/latest/com/yahoo/search/grouping/result/GroupList.html">GroupList</a> and
+<a href="https://javadoc.io/doc/com.yahoo.vespa/container-search/latest/com/yahoo/search/grouping/result/HitList.html">HitList</a>
 result objects. These can then be added back into the continuation list of the
-<code><a href="https://javadoc.io/doc/com.yahoo.vespa/container-search/latest/com/yahoo/search/grouping/GroupingRequest.html">GroupingRequest</a></code>
+<a href="https://javadoc.io/doc/com.yahoo.vespa/container-search/latest/com/yahoo/search/grouping/GroupingRequest.html">GroupingRequest</a>
 to paginate.
 </p><p>
 Refer to the <a href="../grouping.html#pagination">grouping guide</a> for an example.
@@ -161,7 +169,15 @@ using the construct <code>each(...) as(mylabel)</code>.
 The outputs created by that each clause will be identified by this label.
 </p>
 
-
+<h2 id="aliases">Aliases</h2>
+<p>
+    Grouping expressions can be tagged with an <em>alias</em>.
+    An alias allows the expression to be reused without having to repeat the expression verbatim.
+</p>
+<pre>all(group(a) alias(myalias, count()) each(output($myalias)))</pre> is equivalent to
+<pre>all(group(a) each(output(count())))</pre>.
+<pre>all(group(a) order($myalias=count()) each(output($myalias)))</pre> is equivalent to
+<pre>all(group(a) order(count()) each(output(count())))</pre>.
 
 <h2 id="precision">Precision</h2>
 <p>
@@ -178,12 +194,12 @@ A higher number costs more bandwidth, but leads to higher accuracy in some cases
     See the <a href="query-api-reference.html#parameters">Query API Reference</a> for description.
 </p>
 <ul>
-    <li><code><a href="query-api-reference.html#select">select</a></code></li>
-    <li><code><a href="query-api-reference.html#groupingsessioncache">groupingSessionCache</a></code></li>
-    <li><code><a href="query-api-reference.html#grouping.defaultmaxgroups">grouping.defaultMaxGroups</a></code></li>
-    <li><code><a href="query-api-reference.html#grouping.defaultmaxhits">grouping.defaultMaxHits</a></code></li>
-    <li><code><a href="query-api-reference.html#grouping.globalmaxgroups">grouping.globalMaxGroups</a></code></li>
-    <li><code><a href="query-api-reference.html#grouping.defaultprecisionfactor">grouping.defaultPrecisionFactor</a></code></li>
+    <li><a href="query-api-reference.html#select">select</a></li>
+    <li><a href="query-api-reference.html#groupingsessioncache">groupingSessionCache</a></li>
+    <li><a href="query-api-reference.html#grouping.defaultmaxgroups">grouping.defaultMaxGroups</a></li>
+    <li><a href="query-api-reference.html#grouping.defaultmaxhits">grouping.defaultMaxHits</a></li>
+    <li><a href="query-api-reference.html#grouping.globalmaxgroups">grouping.globalMaxGroups</a></li>
+    <li><a href="query-api-reference.html#grouping.defaultprecisionfactor">grouping.defaultPrecisionFactor</a></li>
 </ul>
 
 <h2 id="grouping-session-cache">Grouping Session Cache</h2>
@@ -369,13 +385,20 @@ for more examples.
   <tr class="trx"><th class="thx">Name</th><th class="thx">Description</th><th class="thx">Arguments</th><th class="thx">Result</th></tr>
   <tr><td>fixedwidth</td><td>Maps the value of the first argument into consecutive buckets
       whose width equals the second argument</td><td>Any, Numeric</td><td>NumericBucketList</td></tr>
-  <tr><td>predefined</td><td>Maps the value of the first argument into the given buckets.
-      Standard mathematical start and end specifiers may be used to define the width of a bucket.
-      The "(" and ")" evaluates to "[" and ">" by default.
-      The buckets assume the type of the start/end specifiers
-      (<code>string</code>, <code>long</code>, <code>double</code> or <code>raw</code>).
-      Values are converted to this type before being compared with these specifiers.
-      (e.g. <code>double</code> values are rounded to the nearest integer for buckets of type <code>long</code>).
+  <tr><td>predefined</td><td><p>Maps the value of the first argument into the given buckets.</p>
+      <ul>
+          <li>Standard mathematical start and end specifiers may be used to define the width of a <code>bucket</code>.
+              The <code>(</code> and <code>)</code> evaluates to <code>[</code> and <code>></code> by default.</li>
+          <li>The buckets assume the type of the start/end specifiers
+              (<code>string</code>, <code>long</code>, <code>double</code> or <code>raw</code>).
+              Values are converted to this type before being compared with these specifiers.
+              (e.g. <code>double</code> values are rounded to the nearest integer for buckets of type <code>long</code>).</li>
+          <li>The end specifier can be skipped. The buckets
+              <code>bucket(3)</code>/<code>bucket[3]</code> are the same as <code>bucket[3,4></code>.
+              This is allowed for string expressions as well;
+              <code>bucket("c")</code> is identical to <code>bucket["c", "c "></code>.</li>
+          </li>
+      </ul>
   </td><td>Any, Bucket+</td><td>BucketList</td></tr>
 
   <tr><td colspan="4"><h3 id="time-expressions">Time expressions</h3>
@@ -383,7 +406,7 @@ for more examples.
     Use the query parameter "timezone" to set the timezone to use when running these expressions.
     E.g. <code>&amp;timezone=GMT-1</code>. Refer to Sun's
     <a href="https://docs.oracle.com/javase/6/docs/api/java/util/TimeZone.html">TimeZone</a> reference -->
-    The field must be a <a href="schema-reference.html#field-types">long</a>,
+    The field must be a <a href="schema-reference.html#long">long</a>,
     with second resolution (unix timestamp/epoch) -
     <a href="../grouping.html#time-and-date">examples</a>.
   </td></tr>

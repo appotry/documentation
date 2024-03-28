@@ -1,5 +1,5 @@
 ---
-# Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+# Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 title: "/document/v1 API guide"
 redirect_from:
 - /documentation/document-v1-api-guide.html
@@ -30,7 +30,7 @@ $ curl http://localhost:8080/document/v1/my_namespace/music/docid/love-id-here-t
         <tr>
           <th>Visit</th>
           <td>
-            <a href="content/visiting.html">Visit</a> all documents with given namespace and document type:
+            <a href="visiting.html">Visit</a> all documents with given namespace and document type:
 <pre>
 $ curl http://localhost:8080/document/v1/namespace/music/docid
 </pre>
@@ -146,9 +146,12 @@ not only <em>fieldname</em>." %}
 
 <h2 id="create-if-nonexistent">Create if nonexistent</h2>
 <p>
+</p>
+<h3 id="upserts">Upserts</h3>
+<p>
   Updates to nonexistent documents are supported using
   <a href="reference/document-json-format.html#create">create</a>.
-  This is often called an <em>upsert</em> - insert a document if it does not already exist, or update it if it exists.
+  This is often called an <em>upsert</em> — insert a document if it does not already exist, or update it if it exists.
   An empty document is created on the content nodes, before the update is applied.
   This simplifies client code in the case of multiple writers. Example:
 </p>
@@ -163,31 +166,52 @@ $ curl -X PUT -H "Content-Type:application/json" --data '
   }' \
   http://localhost:8080/document/v1/mynamespace/music/docid/a-head-full-of-thoughts?create=true
 </pre>
+
+
+<h3 id="conditional-updates-and-puts-with-create">Conditional updates and puts with create</h3>
 <p>
-  <em>create</em> can be used in combination with a <a href="#conditional-writes">condition</a>.
-  If the document does not exist, the condition will be ignored
-  and a new document with the update applied is automatically created.
-  Otherwise, the condition must match for the update to take place.
+  Conditional updates and puts can be combined with <a href="reference/document-json-format.html#create">create</a>.
+  This has the following semantics:
 </p>
+<ul>
+  <li>If the document already exists, the condition is evaluated against the most recent document version available.
+      The operation is applied if (and only if) the condition matches.</li>
+  <li>Otherwise (i.e. the document does not exist or the newest document version is a tombstone),
+      the condition is <em>ignored</em> and the operation is applied as if no condition was provided.</li>
+</ul>
+<p>Support for conditional puts with create was added in Vespa 8.178.</p>
+<pre>
+$ curl -X POST -H "Content-Type:application/json" --data '
+  {
+      "fields": {
+          "artist": {
+              "assign": "Coldplay"
+          }
+      }
+  }' \
+  http://localhost:8080/document/v1/mynamespace/music/docid/a-head-full-of-thoughts?create=true&amp;condition=music.title%3D%3D%27best+of%27
+</pre>
 <!-- ToDo: rewrite this / move to elasticity details ...
            What does it mean that a document is "missing"?
            When does this happen?
            Is it likely to happen, so we need to care about this?
            Where can I read more? -->
 {% include warning.html content="If all existing replicas of a document are missing
-  when an update with <code>\"create\": true</code> is executed, a new document will always be created.
+  when an operation with <code>\"create\": true</code> is executed, a new document will always be created.
   This happens even if a condition has been given.
   If the existing replicas become available later,
   their version of the document will be overwritten by the newest update since it has a higher timestamp." %}
 
 {% include note.html content="See <a href='documents.html#document-expiry'>document expiry</a>
-  for auto-created documents - it is possible to create documents that does not match the selection criterion." %}
+  for auto-created documents — it is possible to create documents that do not match the selection criterion." %}
 
-
+{% include note.html content="Specifying <em>create</em> for a Put operation <em>without</em> a
+  condition has no observable effect, as unconditional Put operations will always write
+  a new version of a document regardless of whether it existed already." %}
 
 <h2 id="data-dump">Data dump</h2>
 <p>
-  To iterate over documents, use <a href="content/visiting.html">visiting</a> — sample output:
+  To iterate over documents, use <a href="visiting.html">visiting</a> — sample output:
 </p>
 <pre>{% highlight json %}
 {
@@ -377,8 +401,76 @@ $ curl -s 'http://localhost:8080/document/v1/mynamespace/music/docid/love-is-her
 
 <h2 id="troubleshooting">Troubleshooting</h2>
 <ul>
+  <li> <!-- ToDo: does not belong here, find a better place to put it ... -->
+    <p id="export-documents">
+      When troubleshooting documents not found using the query API,
+      use <a href="vespa-cli.html#documents">vespa visit</a> to export the documents.
+      Then compare the <code>id</code> field with other user-defined <code>id</code> fields in the query.
+    </p>
+<pre>
+$ vespa visit
+</pre>
+<pre>{% highlight json %}
+{
+    "id": "id:mynamespace:music::when-we-all-fall-asleep-where-do-we-go",
+    "fields": {
+        "artist": "Billie Eilish",
+        "doc_id": 12345
+    }
+}
+{% endhighlight %}</pre>
+    <p>Find more details on the components of the <a href="documents.html#id-scheme">document ID</a>.</p>
+  </li>
   <li>
-    Query results can have results like:
+    <p id="document-not-found">Document not found responses look like:</p>
+<pre>
+$ curl http://127.0.0.1:8080/document/v1/mynamespace/music/docid/non-existing-doc
+</pre>
+<pre>{% highlight json %}
+{
+  "pathId": "/document/v1/mynamespace/music/docid/non-existing-doc",
+  "id": "id:mynamespace:music::non-existing-doc"
+}
+{% endhighlight %}</pre>
+    <p>This might look like an empty document, use <code>-v</code> for more output:</p>
+<pre>
+$ curl -v http://127.0.0.1:8080/document/v1/mynamespace/music/docid/non-existing-doc
+
+&gt; GET /document/v1/mynamespace/music/docid/non-existing-doc HTTP/1.1
+&gt; Host: 127.0.0.1:8080
+&gt; User-Agent: curl/7.88.1
+&gt; Accept: */*
+&gt;
+&lt; HTTP/1.1 404 Not Found
+&lt; Date: Fri, 26 May 2023 08:53:20 GMT
+&lt; Content-Type: application/json;charset=utf-8
+&lt; Content-Length: 108
+</pre>
+<pre>{% highlight json %}
+{
+  "pathId": "/document/v1/mynamespace/music/docid/non-existing-doc",
+  "id": "id:mynamespace:music::non-existing-doc"
+}
+{% endhighlight %}</pre>
+    <p>
+      Observe the <em>404 Not Found</em>.
+      Using the <a href="vespa-cli.html#documents">Vespa CLI</a> is great for troubleshooting - use
+      <code>-v</code> for verbose output, this prints an equivalent <code>curl</code> command:
+    </p>
+<pre>
+$ vespa document get -v id:mynamespace:music::non-existing-doc
+curl -X GET http://127.0.0.1:8080/document/v1/mynamespace/music/docid/non-existing-doc
+Error: Invalid document operation: 404 Not Found
+</pre>
+<pre>{% highlight json %}
+{
+    "pathId": "/document/v1/mynamespace/music/docid/non-existing-doc",
+    "id": "id:mynamespace:music::non-existing-doc"
+}
+{% endhighlight %}</pre>
+  </li>
+  <li>
+    <p id="query-result-id">Query results can have results like:</p>
 <pre>{% highlight json %}
 {
     "id": "index:mydoctype/3/399f8030300282ca93929939",
@@ -390,12 +482,14 @@ $ curl -s 'http://localhost:8080/document/v1/mynamespace/music/docid/love-is-her
     }
 }
 {% endhighlight %}</pre>
-    <a href="reference/default-result-format.html#id">Query result IDs</a> are not the same as Document IDs.
-    Use a separate field for the document ID, if needed.
+    <p>
+      <a href="reference/default-result-format.html#id">Query result IDs</a> are not the same as Document IDs.
+      Use a separate field for the document ID, if needed.
+    </p>
   </li><!-- ToDo: https://github.com/vespa-engine/vespa/issues/24371 Allow documentid to be turned into an attribute -->
   <li>
-    Delete <em>all</em> documents in <em>music</em> schema, with security credentials:
-    <pre>
+    <p id="delete-all-documents">Delete <em>all</em> documents in <em>music</em> schema, with security credentials:</p>
+<pre>
 $ curl -X DELETE \
   --cert data-plane-public-cert.pem --key data-plane-private-key.pem \
   "http://localhost:8080/document/v1/mynamespace/music/docid?selection=true&amp;cluster=my_cluster"

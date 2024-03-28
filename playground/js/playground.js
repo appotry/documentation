@@ -1,4 +1,4 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 contexts = {
     VIEW: "view",
@@ -167,7 +167,7 @@ var operations = {
 }
 
 function replace_html_code(str) {
-    return str.replaceAll("<", "&lt;").replaceAll(">", "&gt;");
+    return str.replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }
 
 function has_error(response, result) {
@@ -623,7 +623,8 @@ function execute_selected() {
 
     // If frame is a comment, update directly. Else execute all
     if (op == "c") {
-        results["f"][frame_index].set("t", converter.makeHtml(param["t"]));
+        var comment = replace_html_code(param["t"]);
+        results["f"][frame_index].set("t", converter.makeHtml(comment));
         update();
     } else {
         execute_all();
@@ -643,10 +644,11 @@ function execute_all() {
                 result.set("result", "Executing...");
             }
             result.set("executing", true)
-            result.set("n", param["n"])
-            result.set("e", param["e"])
+            result.set("n", replace_html_code(param["n"]))
+            result.set("e", replace_html_code(param["e"]))
         } else if (op == "c") {
-            result.set("t", converter.makeHtml(param["t"]));
+            var comment = replace_html_code(param["t"]);
+            result.set("t", converter.makeHtml(comment));
         }
     }
     update();
@@ -677,7 +679,7 @@ function execute_all() {
                 var param = setup["f"][cell]["p"];
                 var result = results["f"][cell];
 
-                result.set("n", param["n"]);
+                result.set("n", replace_html_code(param["n"]));
                 result.set("e", param["e"]);
                 result.set("executing", false);
 

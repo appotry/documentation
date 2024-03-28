@@ -1,5 +1,5 @@
 ---
-# Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+# Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 title: FAQ - frequently asked questions
 style: faq
 redirect_from:
@@ -126,23 +126,47 @@ rank-profile drop-low-score {
 }
 </pre>
 
+#### Are ranking expressions or functions evaluated lazily
+<p>Rank expressions are not evaluated lazily.  No, this would require lambda arguments.
+  Only doubles and tensors are passed between functions.
+  
+   Example:</p>
+<pre>
+function inline foo(tensor, defaultVal) {
+    expression: if (count(tensor) == 0, defaultValue, sum(tensor))
+}
+
+function bar() {
+    expression: foo(tensor, sum(tensor1 * tensor2))
+}
+</pre>
+
 #### Does Vespa support early termination of matching and ranking?
 Yes, this can be accomplished by configuring [match-phase](reference/schema-reference.html#match-phase) in the rank profile,  or by adding a range query item using *hitLimit* to the query tree, 
 see [capped numeric range search](reference/query-language-reference.html#numeric).  
-Both methods require an *attribute* field with *fast-search*. The capped range query is faster but beware that if there are other restrictive filters in the query one might end up with 0 hits. 
+Both methods require an *attribute* field with *fast-search*. The capped range query is faster, but beware that if there are other restrictive filters in the query, one might end up with 0 hits. 
 The additional filters are applied as a post filtering 
-step over the hits from the capped range query. *match-phase* on the other hand is safe to use with filters or other query terms, and also supports diversification which the capped range query term 
-does not support.  
+step over the hits from the capped range query. *match-phase* on the other hand, is safe to use with filters or other query terms, 
+and also supports diversification which the capped range query term does not support.  
 
+#### What could cause the relevance field to be -Infinity
+The returned [relevance](reference/default-result-format.html#relevance) for a hit can become "-Infinity" instead
+of a double. This can happen in two cases:
+
+- The [ranking](ranking.html) expression used a feature which became `NaN` (Not a Number). For example, `log(0)` would produce
+-Infinity. One can use [isNan](reference/ranking-expressions.html#isnan-x) to guard against this. 
+- Surfacing low scoring hits using [grouping](grouping.html), that is, rendering low ranking hits with `each(output(summary()))` that are outside of what Vespa computed and caches on a heap. This is controlled by the [keep-rank-count](reference/schema-reference.html#keep-rank-count).
 
 
 {:.faq-section}
 ### Documents
 
 #### What limits apply to json document size?
-There is no hard limit.
-Vespa requires a document to be able to load into memory in serialized form.
-Vespa is not optimized for huge documents.
+There is no hard limit, see [field size](/en/schemas.html#field-size).
+
+#### Is there any size limitation in multivalued fields?
+No enforced limit, except resource usage (memory).
+See [field size](/en/schemas.html#field-size).
 
 #### Can a document have lists (key value pairs)?
 E.g. a product is offered in a list of stores with a quantity per store.
@@ -165,10 +189,7 @@ as an acceptable (and to some extent configurable) trade-off.
 Wildcard fields are not supported in vespa.
 Workaround would be to use maps to store the wildcard fields.
 Map needs to be defined with <code>indexing: attribute</code> and hence will be stored in memory.
-Refer to [map](reference/schema-reference.html#type:map).
-
-#### Is there any size limitation in multivalued fields?
-No limit, except memory.
+Refer to [map](reference/schema-reference.html#map).
 
 #### Can we set a limit for the number of elements that can be stored in an array?
 Implement a [document processor](document-processing.html) for this.
@@ -183,36 +204,41 @@ Read more about [document expiry](documents.html#document-expiry).
 Changing redundancy is a live and safe change
 (assuming there is headroom on disk / memory - e.g. from 2 to 3 is 50% more).
 The time to migrate will be quite similar to what it took to feed initially -
-a bit hard to say generally, and depends on IO and index settings, like if building an index for ANN.
+a bit hard to say generally, and depends on IO and index settings, like if building an HNSW index.
 To monitor progress, take a look at the
 [multinode](https://github.com/vespa-engine/sample-apps/tree/master/examples/operations/multinode)
 sample application for the _clustercontroller_ status page - this shows buckets pending, live.
 Finally, use the `.idealstate.merge_bucket.pending` metric to track progress -
 when 0, there are no more data syncing operations - see
-[monitor distance to ideal state](operations/admin-procedures.html#monitor-distance-to-ideal-state).
+[monitor distance to ideal state](/en/operations-selfhosted/admin-procedures.html#monitor-distance-to-ideal-state).
 Nodes will work as normal during data sync, and query coverage will be the same.
-Nodes will be busier, though.
 
 #### How does namespace relate to schema?
 It does not,
 _namespace_ is a mechanism to split the document space into parts that can be used for document selection -
-see [documentation](documents.html#namespace).
+see [documentation](documents.html#namespace). The namespace is not indexed and cannot
+be searched using the query api, but can be used by [visiting](visiting.html).
 
 #### Visiting does not dump all documents, and/or hangs.
-There are multiple things that can cause this, see [visiting troubleshooting](content/visiting.html#troubleshooting).
+There are multiple things that can cause this, see [visiting troubleshooting](visiting.html#troubleshooting).
+
+#### How to find number of documents in the index?
+Run a query like `vespa query "select * from sources * where true"` and see the `totalCount` field.
+Alternatively, use metrics or `vespa visit` - see [examples](/en/operations/batch-delete.html#example).
 
 
 
 {:.faq-section}
 ### Query
 
-#### Is hierarchical facets supported?
+#### Are hierarchical facets supported?
 Facets is called <a href="grouping.html">grouping</a> in Vespa.
 Groups can be multi-level.
 
-#### Is filters supported?
+#### Are filters supported?
 Add filters to the query using [YQL](query-language.html)
-using boolean, numeric and [text matching](text-matching-ranking.html).
+using boolean, numeric and [text matching](text-matching.html). Query terms can be annotated
+as filters, which means that they are not highlighted when bolding results. 
 
 #### How to query for similar items?
 One way is to describe items using tensors and query for the
@@ -221,7 +247,7 @@ using full precision or approximate (ANN) - the latter is used when the set is t
 Apply filters to the query to limit the neighbor candidate set.
 Using [dot products](multivalue-query-operators.html) or [weak and](using-wand-with-vespa.html) are alternatives.
 
-#### Stop-word support?
+#### Does Vespa support stop-word removal?
 Vespa does not have a stop-word concept inherently.
 See the [sample app](https://github.com/vespa-engine/sample-apps/pull/335/files)
 for how to use [filter terms](reference/query-language-reference.html#annotations).
@@ -249,46 +275,50 @@ this creates a new Query, sets a new root and parameters - then `fill`s the Hits
 #### How to create a cache that refreshes itself regularly
 <!-- ToDo: Maybe a bit long for the FAQ and such a component could be added to a sample app instead later -->
 See the sub-query question above, in addition add something like:
-```java
+<pre>{% highlight java%}
+
 public class ConfigCacheRefresher extends AbstractComponent {
-...
+
     private final ScheduledExecutorService configFetchService = Executors.newSingleThreadScheduledExecutor();
     private Chain<Searcher> searcherChain;
-...
+
     void initialize() {
         Runnable task = () -> refreshCache();
         configFetchService.scheduleWithFixedDelay(task, 1, 1, TimeUnit.MINUTES);
         searcherChain = executionFactory.searchChainRegistry().getChain(new ComponentId("configDefaultProvider"));
     }
-...
+
     public void refreshCache() {
         Execution execution = executionFactory.newExecution(searcherChain);
         Query query = createQuery(execution);
-...
+
     public void deconstruct() {
         super.deconstruct();
         try {
             configFetchService.shutdown();
             configFetchService.awaitTermination(1, TimeUnit.MINUTES);
-...
+        }catch(Exception e) {..}
+    }
 }
-```
+{% endhighlight %}</pre>
 
 #### Is it possible to query Vespa using a list of document ids?
+Yes, using the [in query operator](reference/query-language-reference.html#in). Example:
+```
+select * from data where user_id in (10, 20, 30)
+```
 The best article on the subject is
 [multi-lookup set filtering](performance/feature-tuning.html#multi-lookup-set-filtering).
-Refer to the [weightedset-example](multivalue-query-operators.html#weightedset-example) -
-also see [weightedset](reference/query-language-reference.html#weightedset)
-for writing a YQL query to select multiple IDs.
-The ID must be a field in the document type.
+Refer to the [in operator example](multivalue-query-operators.html#in-example)
+on how to use it programmatically in a [Java Searcher](searcher-development.html).
 
 #### How to query documents where one field matches any values in a list? Similar to using SQL IN operator
-Example:
+Use the [in query operator](reference/query-language-reference.html#in). Example:
 ```
-select * from data where category = 'cat1' OR category = 'cat2'..
+select * from data where category in ('cat1', 'cat2', 'cat3')
 ```
-See [multi-lookup set filtering](#is-it-possible-to-query-vespa-using-a-list-of-document-ids) above,
-using a weighted set instead of a big OR.
+See [multi-lookup set filtering](#is-it-possible-to-query-vespa-using-a-list-of-document-ids)
+above for more details.
 
 
 #### How to count hits / all documents without returning results?
@@ -339,24 +369,70 @@ Alternatively, split a single incoming query into two running in parallel in a [
 FutureResult futureResult = new AsyncExecution(settings).search(query);
 FutureResult otherFutureResult = new AsyncExecution(settings).search(otherQuery);
 ```
+#### Is it possible to query for the number of elements in an array 
+No, there is no index or attribute data structure that allows efficient searching for documents where 
+an array field has a certain number of elements or items.  
+
+#### Is it possible to query for fields with NaN/no value set/null/none
+No, there is no efficient way to query for not having a value. The [visiting](visiting.html) API
+using document selections does support it, but is a linear scan over all documents.
+
+#### How to retrieve random documents using YQL? Functionality similar to MySQL "ORDER BY rand()"
+See the [random.match](reference/rank-features.html#random.match) rank feature - example:
+```
+rank-profile random {
+    first-phase {
+        expression: random.match
+    }
+}
+```
+Run queries, seeding the random generator:
+```
+$ vespa query 'select * from music where true' \
+  ranking=random \
+  rankproperty.random.match.seed=2
+```
 
 
 {:.faq-section}
 ### Feeding
 
+#### How to debug a feeding 400 response?
+The best option is to use `--verbose` option, like `vespa feed --verbose myfile.jsonl` -
+see [documentation](/en/vespa-cli.html#documents).
+A common problem is a mismatch in schema names and [document IDs](/en/documents.html#document-ids) - a schema like:
+```
+schema article {
+    document article {
+        ...
+    }
+}
+```
+will have a document feed like:
+```
+{"put": "id:mynamespace:article::1234", "fields": { ... }}
+```
+Note that the [namespace](/en/glossary.html#namespace) is not mentioned in the schema,
+and the schema name is the same as the document name.
+
 #### How to debug document processing chain configuration?
 This configuration is a combination of content and container cluster configuration,
-see [indexing](indexing.html) and [feed troubleshooting](operations/admin-procedures.html#troubleshooting).
+see [indexing](indexing.html) and [feed troubleshooting](/en/operations-selfhosted/admin-procedures.html#troubleshooting).
 
 #### I feed documents with no error, but they are not in the index
 This is often a problem if using [document expiry](documents.html#document-expiry),
-as documents already expired will not be persisted, they are silently dropped.
-Feeding stale test data with old timestamps can cause this.
+as documents already expired will not be persisted, they are silently dropped and ignored.
+Feeding stale test data with old timestamps in combination with document-expiry can cause this
+behavior.
 
 #### How to feed many files, avoiding 429 error?
-Using too many clients can generate a 429 response code.
-The Vespa sample apps use the [vespa-feed-client](vespa-feed-client.html) which uses HTTP/2 for high throughput -
+Using too many HTTP clients can generate a 429 response code.
+The Vespa sample apps use [vespa feed](vespa-cli.html#documents) which uses HTTP/2 for high throughput -
 it is better to stream the feed files through this client.
+
+#### Can I use Kafka to feed to Vespa?
+Vespa does not have a Kafka connector.
+Refer to third-party connectors like [kafka-connect-vespa](https://github.com/vinted/kafka-connect-vespa).
 
 
 
@@ -405,12 +481,16 @@ and have limited text match modes (i.e. `indexing: index` cannot be used).
 
 If you have added vectors to your documents and queries, and see that the rank feature 
 closeness(field, yourEmbeddingField) produces 1.0 for all documents, you are likely using
-[distance-metric](reference/schema-reference.html#distance-metric): innerproduct,
-but your vectors are not normalized, and the solution is normally to switch to distance-metric: angular.
+[distance-metric](reference/schema-reference.html#distance-metric): innerproduct/prenormalized-angular,
+but your vectors are not normalized, and the solution is normally to switch to
+[distance-metric: angular](reference/schema-reference.html#angular)
+or use
+[distance-metric: dotproduct](reference/schema-reference.html#dotproduct)
+(available from Vespa version 8.170.18).
 
 With non-normalized vectors, you often get negative distances, and those are capped to 0,
 leading to closeness 1.0.
-Some models, such as models from sbert.net, claim to be normalized but are not.
+Some embedding models, such as models from sbert.net, claim to output normalized vectors but might not. 
 
 
 
@@ -444,6 +524,12 @@ injected and use that to get documents by id instead of the HTTP API.
   <li>Only new components are alive</li>
 </ol-->
 <!-- ToDo: move this to the doc itself and link from here - and add something useful ... -->
+
+#### Does Vespa work with Java 20?
+Vespa uses Java 17 - it will support 20 some time in the future.
+
+#### How to write debug output from a custom component?
+Use `System.out.println` to write text to the [vespa.log](reference/logs.html).
 
 
 
@@ -518,7 +604,7 @@ keeping <span style="text-decoration: underline">maximum</span> memory used unde
 using features like [feed block](operations/feed-block.html).
 
 When deleting documents, one can observe a slight <span style="text-decoration: underline">increase</span> in memory.
-A deleted document is represented using a [tombstone](operations/admin-procedures.html#content-cluster-configuration),
+A deleted document is represented using a [tombstone](/en/operations-selfhosted/admin-procedures.html#content-cluster-configuration),
 that will later be removed, see [removed-db-prune-age](reference/services-content.html#removed-db-prune-age).
 When running garbage collection,
 the summary store is scanned using mmap and both VIRT and page cache memory usage increases.
@@ -560,7 +646,7 @@ Topology matters, and this is much used in the high-volume Vespa applications to
 With [Vespa Cloud](https://cloud.vespa.ai/),
 we do automated background upgrades daily without noticeable serving impact.
 If you host Vespa yourself, you can do this, but need to implement the orchestration logic necessary to handle this.
-The high level procedure is found in [live-upgrade](operations/live-upgrade.html).
+The high level procedure is found in [live-upgrade](/en/operations-selfhosted/live-upgrade.html).
 
 #### Can Vespa be deployed multi-region?
 [Vespa Cloud](https://cloud.vespa.ai/en/reference/zones) has integrated support - query a global endpoint.
@@ -574,8 +660,8 @@ It is also at odds with realtime writes.
 For these reasons, it is not recommended, and not supported.
 
 #### Does vespa give us any tool to browse the index and attribute data?
-No. Use [visiting](content/visiting.html) to dump all or a subset of documents.
-See [dumping-data](https://cloud.vespa.ai/en/dumping-data) for a sample script.
+Use [visiting](visiting.html) to dump all or a subset of the documents.
+See [data-management-and-backup](https://cloud.vespa.ai/en/data-management-and-backup) for more information.
 
 #### What is the response when data is written only on some nodes and not on all replica nodes (Based on the redundancy count of the content cluster)? 
 Failure response will be given in case the document is not written on some replica nodes.
@@ -663,7 +749,7 @@ Another example:
 ```
 There are many ways this can fail, the first step is to check the Vespa Container:
 ```
-$ docker exec vespa /opt/vespa/bin/vespa-logfmt -l error
+$ docker exec vespa vespa-logfmt -l error
 
 [2022-10-21 10:55:09.744] ERROR   container
 Container.com.yahoo.container.jdisc.ConfiguredApplication
@@ -689,13 +775,17 @@ Make sure you are running a recent version of the Docker image, do `docker pull 
 <!-- ToDo: remove this soon -->
 
 #### Deployment fails / nothing is listening on 19071
-Make sure all [Config servers](operations/configuration-server.html#troubleshooting) are started,
+Make sure all [Config servers](/en/operations-selfhosted/configuration-server.html#troubleshooting) are started,
 and are able to establish ZooKeeper quorum (if more than one) -
 see the [multinode](https://github.com/vespa-engine/sample-apps/tree/master/examples/operations/multinode) sample application.
-Validate that the container has [enough memory](operations/docker-containers.html).
+Validate that the container has [enough memory](/en/operations-selfhosted/docker-containers.html).
 
 #### Startup problems in multinode Kubernetes cluster - readinessProbe using 19071 fails
 The Config Server cluster with 3 nodes fails to start.
 The ZooKeeper cluster the Config Servers use waits for hosts on the network,
 the hosts wait for ZooKeeper in a catch 22 -
 see [sampleapp troubleshooting](https://github.com/vespa-engine/sample-apps/tree/master/examples/operations#troubleshooting).
+
+#### How to display vespa.log?
+Use [vespa-logfmt](/en/operations-selfhosted/vespa-cmdline-tools.html#vespa-logfmt) to dump logs.
+If Vespa is running in a local container (named "vespa"), run `docker exec vespa vespa-logfmt`.

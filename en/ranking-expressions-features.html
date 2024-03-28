@@ -1,5 +1,5 @@
 ---
-# Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+# Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 title: "Ranking Expressions and Features"
 redirect_from:
 - /documentation/ranking-expressions-features.html
@@ -100,7 +100,7 @@ search assistance triggering when there are no good hits, and so on.
 
 <h3 id="configuration">Configuration</h3>
 <p>
-Some features, most notably the <a href="text-matching-ranking.html">fieldMatch</a> features,
+Some features, most notably the <a href="ranking.html#text-ranking">fieldMatch</a> features,
 has configuration parameters that enables the feature calculation to be tweaked per field
 for performance or relevance.
 Feature configuration values are set by adding to the rank profile:
@@ -114,7 +114,7 @@ rank-properties {
 <pre>
 rank-properties {
     fieldMatch(title).maxAlternativeSegmentations: 10
-    fieldmatch(title).maxOccurrences: 5
+    fieldMatch(title).maxOccurrences: 5
     fieldMatch(description).maxOccurrences: 20
 }
 </pre>
@@ -303,7 +303,7 @@ inputs {
 
 These variables can then be overridden in the query by adding:</p>
 <pre>
-inputs.query(myvalue)=0.1
+input.query(myvalue)=0.1
 </pre>
 <p>
 to it - see the <a href="reference/query-api-reference.html#ranking.features">Query API</a>.
@@ -325,7 +325,7 @@ Tensors can be passed in requests using the <a href="reference/tensor.html#tenso
 for example:
 </p>
 <pre>
-inputs.query(user_profile)=%7B%7Bcat%3Apop%7D%3A0.8%2C%7Bcat%3Arock%7D%3A0.2%2C%7Bcat%3Ajazz%7D%3A0.1%7D
+input.query(user_profile)=%7B%7Bcat%3Apop%7D%3A0.8%2C%7Bcat%3Arock%7D%3A0.2%2C%7Bcat%3Ajazz%7D%3A0.1%7D
 </pre>
 <p>
 However, it is usually preferable instead to create them in a <a href="searcher-development.html">Searcher</a>.

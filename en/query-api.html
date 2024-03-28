@@ -1,5 +1,5 @@
 ---
-# Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+# Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 title: "Query API"
 redirect_from:
 - /documentation/query-api.html
@@ -125,6 +125,28 @@ select * from sources * where range(year, 1963, 2014) and (weakAnd(default conta
 </p>
 
 
+<h3 id="using-a-fieldset">Using a fieldset</h3>
+<p>
+  Above, the userInput() is run on the <em>default</em> index, as it is not specified.
+  Use a <a href="/en/reference/query-language-reference.html#defaultindex">query annotation</a>
+  to use another index:
+</p>
+<pre>
+$ vespa query "select * from sources * where {defaultIndex: 'myindex'}userInput(@q)" \
+  q=panda
+</pre>
+<p>
+  <code>myindex</code> is here a <a href="schemas.html#field">field</a>
+  or <a href="/en/schemas.html#fieldset">fieldset</a> in the schema.
+  With userQuery(), use <a href="/en/reference/query-api-reference.html#model.defaultindex">model.defaultIndex</a>:
+</p>
+<pre>
+$ vespa query "select * from music where userQuery()" \
+  query=panda \
+  model.defaultIndex=myindex
+</pre>
+
+
 <h3 id="query-profiles">Query Profiles</h3>
 <p>
   Use a <a href="reference/query-api-reference.html#queryprofile">query profile</a> to store
@@ -145,6 +167,61 @@ select * from sources * where range(year, 1963, 2014) and (weakAnd(default conta
 </p>
 
 
+<h3 id="parameter-substitution">Parameter substitution</h3>
+<p>
+  Parameter substitution lets you provide query values as request parameters
+  instead of inserting this into the YQL string itself.
+  This simplifies query generation, separating the value of the string/set/array from the YQL string -
+  i.e. the value will not corrupt the YQL string if it contains YQL-like syntax:
+</p>
+<ul>
+  <li>
+    Simplify query generation, separating the value of the set/array from the YQL string.
+
+  </li>
+  <li>Speed up query parsing. Using parameter substitution accelerates string parsing.</li>
+  <li>Reduce duplication.</li>
+</ul>
+<p>
+  In its simplest form,
+  use <a href="/en/reference/query-language-reference.html#userinput">userInput()</a> for strings:
+</p>
+
+<pre>
+... where userInput(@user_input)&user_input=free+text
+</pre>
+<p>Lists, maps and arrays can also be used - examples:</p>
+<pre>
+# Simple example: provide a set for the IN operator
+... where id in (@my_set)&my_set=10,20,30
+
+# Same set, but use the set as a block-list (exclude items in the set)
+... where !(id in (@my_set))&my_set=10,20,30
+
+# Use a weightedSet operator
+... where weightedSet(field, @my_set)&my_set={a:1,b:2}
+</pre>
+<p>
+  It is also great to eliminate data duplication,
+  from Vespa 8.287 one can use parameter substitution with <code>embed</code>:</p>
+<pre>
+$ vespa query \
+  'yql=select id, from product where {targetHits:10}nearestNeighbor(embedding, query_embedding) or <span class="pre-hilite">userQuery()</span>' \
+  'input.query(query_embedding)=embed(transformer, <span class="pre-hilite">@query</span>)' \
+  'input.query(query_tokens)=embed(tokenizer, <span class="pre-hilite">@query</span>)' \
+  '<span class="pre-hilite">query=running shoes for kids, white</span>'
+</pre>
+<p>
+  Note the use of the parameter named <a href="/en/reference/query-api-reference.html#model.querystring">query</a>
+  used by the <a href="/en/reference/query-language-reference.html#userquery">userQuery()</a> operator.
+  Also note the value substituted in the <a href="/en/embedding.html#embedding-a-query-text">embed</a> functions.
+</p>
+<p>
+  See the <a href="/en/reference/query-language-reference.html#parameter-substitution">reference</a>
+  for a complete list of formats.
+</p>
+
+
 
 <h2 id="ranking">Ranking</h2>
 <p>
@@ -153,25 +230,47 @@ select * from sources * where range(year, 1963, 2014) and (weakAnd(default conta
   A <a href="reference/query-api-reference.html#ranking.profile">rank profile</a>
   is a specification for how to compute a document's score.
   An application can have multiple rank profiles, to run different computations.
-  Example, query specifies <em>rank_albums</em>, with its schema definition:
+  Example, a query specifies query categories and a user embedding
+  (from the <a href="tensor-user-guide.html#ranking-with-tensors">tensor user guide</a>):
 </p>
 <pre>
-ranking=rank_albums
-
-rank-profile rank_albums inherits default {
-    first-phase {
-        expression: sum(query(user_profile) * attribute(category_scores))
+rank-profile product_ranking inherits default {
+    inputs {
+        query(q_category) tensor&lt;float&gt;(category{})
+        query(q_embedding) tensor&lt;float&gt;(x[4])
     }
+
+    function p_sales_score() {
+        expression: sum(query(q_category) * attribute(sales_score))
+    }
+
+    function p_embedding_score() {
+        expression: closeness(field, embedding)
+    }
+
+    first-phase {
+        expression: p_sales_score() + p_embedding_score()
+    }
+    match-features: p_sales_score() p_embedding_score()
 }
 </pre>
+<pre>{% highlight shell %}
+vespa query 'yql=select * from product where {targetHits:1}nearestNeighbor(embedding,q_embedding)' \
+  'input.query(q_embedding)=[1,2,3,4]' \
+  'input.query(q_category)={"Tablet Keyboard Cases":0.8, "Keyboards":0.3}' \
+  'ranking=product_ranking'
+{% endhighlight %}</pre>
+{% include note.html content='In this example, <code>input.query(q_embedding)</code> is short for
+<code>ranking.features.query(q_embedding)</code> -
+see the <a href="reference/query-api-reference.html#ranking.features">reference</a>
+for tensor formats.' %}
 <p>
   Results can be ordered using <a href="reference/sorting.html">sorting</a> instead of ranking.
 </p>
 <p>
   The above rank profile does not do text ranking -
   there are however such profiles built-in.
-  Text search and ranking is described in more detail in
-  <a href="text-matching-ranking.html">Text Matching and Ranking</a> -
+  Text search is described in more detail in <a href="text-matching.html">Text Matching</a> -
   find information about normalizing, prefix search and linguistics there.
 </p>
 
@@ -213,7 +312,7 @@ use this to write code to manipulate results.
 
 
 <h2 id="query-execution">Query execution</h2>
-<img src="/assets/img/query-to-response.svg" width="780px" height="auto"
+<img src="/assets/img/query-to-response.svg" width="645px" height="auto"
      alt="Query execution - from query to response"/>
 <p>
   Phases:
@@ -307,7 +406,7 @@ use this to write code to manipulate results.
     <p>
     The query arrives at the content nodes which performs matching,
     <a href="ranking.html">ranking</a> and aggregation/grouping over the set of documents
-    in the <a href="proton.html">Ready sub database</a>.
+    in the <a href="proton.html">Ready sub database</a>. By default, Vespa uses <a href="performance/feature-tuning.html#hybrid-taat-daat">DAAT</a> where the matching and first-phase score calculation is interleaved and not two separate, sequential phases.
     <em>vespa-proton</em> does matching over the <em>ready</em> documents
     and <a href="ranking.html">ranks</a> as specified with the request/schema.
     Each content node matches and ranks a subset of the total document corpus

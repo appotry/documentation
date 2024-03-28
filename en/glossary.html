@@ -1,5 +1,5 @@
 ---
-# Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+# Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 title: "Glossary"
 ---
 
@@ -16,9 +16,7 @@ li > ul > li {
 </style>
 
 
-<p>
-  Glossary of both Vespa-specific terminology, and general terms useful in this context.
-</p>
+<p>This is a glossary of both Vespa-specific terminology, and general terms useful in this context.</p>
 <hr />
 
 <ul>
@@ -40,6 +38,16 @@ li > ul > li {
     </p>
   </li>
   <li>
+    <p id="boolean-search"><strong>Boolean Search</strong></p>
+    <p>
+      Use <a href="predicate-fields.html">Predicate fields</a>
+      to match queries to a set of boolean constraints in documents.
+      The typical use case is to have a set of boolean constraints
+      representing advertisements, specifying their target groups.
+      Example: <code>hobby in [Music, Hiking] and age in [20..30]</code>.
+    </p>
+  </li>
+  <li>
     <p id="cluster"><strong>Cluster</strong></p>
     <p>
       A set of homogenous nodes which all perform the same task.
@@ -51,15 +59,25 @@ li > ul > li {
     <p>
       Components extend a base class from the Container code module;
       some are <a href="components/chained-components.html">Chained</a> for execution.
-      The main available component types are:
+      The component types are:
     </p>
     <ul>
-      <li>Processors</li>
+      <li><a href="jdisc/processing.html#processors">Processors</a></li>
       <li><a href="#searcher">Searchers</a></li>
       <li><a href="#document-processor">Document Processors</a></li>
-      <li>Search Result Renderers</li>
-      <li>Provider Components</li>
+      <li><a href="result-rendering.html">Search Result Renderers</a></li>
+      <li><a href="jdisc/injecting-components.html#special-components">Provider Components</a></li>
     </ul>
+  </li>
+  <li>
+    <p id="configuration-server"><strong>Configuration Server</strong></p>
+    <p>
+      The configuration server hosts most of the control plane of Vespa,
+      where application packages are deployed to - often shortened to "config server".
+      Config servers are deployed as one or in a cluster - see <a href="overview.html">overview</a>.
+      The config server serves configuration for all Vespa processes,
+      and is normally the first cluster started.
+    </p>
   </li>
   <li>
     <p id="container"><strong>Container</strong></p>
@@ -67,6 +85,46 @@ li > ul > li {
       Vespa's Java container, hosting all application components as well as the stateless logic of Vespa itself.
       Read more in <a href="jdisc/index.html">Container</a>.
       Not to be confused with <a href="#docker">Docker Containers</a>.
+    </p>
+  </li>
+  <li>
+    <p id="content-node"><strong>Content Node</strong></p>
+    <p>
+      Content nodes are stateful and holds the document and index data -
+      see <a href="https://docs.vespa.ai/en/content/content-nodes.html">content nodes</a>.
+      These nodes implement Vespa's <a href="elasticity.html">elasticity</a>
+      for seamless data migration and scaling.
+    </p>
+  </li>
+  <li>
+    <p id="control-plane"><strong>Control Plane</strong></p>
+    <p>
+      The deploy-commands are Vespa's control plane.
+      The control plane is often secured with other credentials than the <a href="#data-plane">data plane</a>.
+      Often low throughput and used by automation like GitHub Actions to deploy new versions
+      of application packages.
+    </p>
+  </li>
+  <li>
+    <p id="data-plane"><strong>Data Plane</strong></p>
+    <p>
+      Document and Query APIs make the Vespa Data plane.
+      Also see <a href="#control-plane">control plane</a>.
+      Often high throughout / low latency, as this is user-serving.
+    </p>
+  </li>
+  <li>
+    <p id="deploy"><strong>Deploy</strong></p>
+    <p>
+      <code>deploy</code> is a control-plane command to upload and activate a new version of an
+      <a href="#application">application package</a>.
+    </p>
+  </li>
+  <li>
+    <p id="deployment"><strong>Deployment</strong></p>
+    <p>
+      A deployment is a running Vespa application,
+      created by using <a href="#deploy">deploy</a>.
     </p>
   </li>
   <li>
@@ -78,7 +136,6 @@ li > ul > li {
       and it enables users to run Vespa in a well-defined environment on multiple platforms.
     </p>
   </li>
-
   <li>
     <p id="document"><strong>Document</strong></p>
     <p>
@@ -87,6 +144,18 @@ li > ul > li {
       A document is a set of key-value pairs.
       A document has a <a href="#schema">Schema</a>.
       Read more in <a href="documents.html">Documents</a>.
+    </p>
+  </li>
+  <li>
+    <p id="document-summary"><strong>Document summary</strong></p>
+    <p>
+      A <a href="document-summaries.html">document summary</a>
+      is the information that is shown for each document in a query result.
+      What information to include is determined by a document summary class:
+      A named set of fields with config on which information they should contain.
+      When Vespa stores a document, it is written to the <a href="proton.html#document-store">document store</a>
+      and used to generate summaries.
+      The document store is scanned when using <a href="streaming-search.html">streaming search</a>.
     </p>
   </li>
   <li>
@@ -122,6 +191,17 @@ li > ul > li {
     </p>
   </li>
   <li>
+    <p id="federation"><strong>Federation</strong></p>
+    <p>
+      The <a href="#container">Container</a> allows multiple sources of data
+      to be <a href="federation.html">federated</a> to a common search service.
+      The sources of data may be both search clusters, or external services,
+      backed by Vespa or any other kind of service.
+      The container may be used as a pure federation platform
+      by setting up a system consisting solely of container nodes federating to external services.
+    </p>
+  </li>
+  <li>
     <p id="field"><strong>Field</strong></p>
     <p>
       Documents have <a href="schemas.html#field">Fields</a>.
@@ -149,6 +229,26 @@ li > ul > li {
     </p>
   </li>
   <li>
+    <p id="indexing"><strong>Indexing</strong></p>
+    <p>
+      The process of creating index structures.
+      This includes routing document writes to indexing processors,
+      processing (indexing) documents and writing the documents to content clusters.
+      Settings like <a href="#streaming-search">streaming search</a> do not create indices to optimize resource usage.
+    </p>
+  </li>
+  <li>
+    <p id="instance"><strong>Instance</strong></p>
+    <p>
+      <em>Instance</em> is always "default" in Vespa.ai
+      (i.e. there is only <span style="text-decoration: underline">one</span>) -
+      managed services like <a href="https://cloud.vespa.ai/">Vespa Cloud</a> support multiple,
+      <a href="https://cloud.vespa.ai/en/tenant-apps-instances">read more</a>.
+      An instance is a deployment of an application for a given purpose, like production serving -
+      multiple instances of an application can be used to support more use cases like integration testing.
+    </p>
+  </li>
+  <li>
     <p id="namespace"><strong>Namespace</strong></p>
     <p>
       A segment of <a href="#document">Document IDs</a>
@@ -156,6 +256,19 @@ li > ul > li {
       Namespace can be used to <a href="#visit">Visit</a> a subspace of the corpus.
       <!-- ToDo: Add to readme in https://github.com/vespa-cloud/vespa-documentation-search and link there
                  for an example of how to use namespace to partition the corpus -->
+    </p>
+  </li>
+  <li>
+    <p id="nearest-neighbor-search"><strong>Nearest neighbor search</strong></p>
+    <p>
+      <a href="nearest-neighbor-search.html">Nearest neighbor search</a>,
+      or <a href="vector-search.html">vector search</a>,
+      is a technique used to find the closest data points to a given query point in a high-dimensional vector space -
+      see <a href="nearest-neighbor-search.html#distance-metrics-for-nearest-neighbor-search">distance metric</a>.
+      It can be exact or approximate.
+      <!-- ToDo: link to Aug 2023 blog post -->
+      This is supported in Vespa using the
+      <a href="reference/query-language-reference.html#nearestneighbor">nearestNeighbor</a> query operator.
     </p>
   </li>
   <li>
@@ -182,6 +295,18 @@ li > ul > li {
       Partial updates do not require the full document,
       and enables a high write throughput with memory-only operations.
       <a href="partial-updates.html">Read more</a>.
+    </p>
+  </li>
+  <li>
+    <p id="quantization"><strong>Quantization</strong></p>
+    <p>
+      Quantization is the process of constraining an input
+      from a continuous or otherwise large set of values (such as the real numbers)
+      to a discrete set (such as the integers).
+      It is a way to reduce memory and CPU usage for <a href="#tensor">tensor operations</a>
+      in <a href="#nearest-neighbor-search">nearest neighbor search</a>,
+      to improve throughput or latencies.
+      <!-- ToDo: Link to Aug 2023 blog post on this -->
     </p>
   </li>
   <li>
@@ -221,10 +346,43 @@ li > ul > li {
     </p>
   </li>
   <li>
+    <p id="semantic-search"><strong>Semantic search</strong></p>
+    <p>
+      Semantic search denotes search with meaning,
+      as distinguished from lexical search where the search engine looks for literal matches of the query words.
+      Read <a href="https://blog.vespa.ai/semantic-search-with-multi-vector-indexing/">
+      Revolutionizing Semantic Search with Multi-Vector HNSW Indexing</a>
+      for more details on semantic search, pointers to resources, and how to implement it.
+    </p>
+  </li>
+  <li>
     <p id="service"><strong>Service</strong></p>
     <p>
       A Service runs in a <a href="#cluster">Cluster</a> of container or content nodes,
       configured in <a href="reference/services.html">services.xml</a>.
+    </p>
+  </li>
+  <li>
+    <p id="streaming-search"><strong>Streaming search</strong></p>
+    <p>
+      <a href="streaming-search.html">Streaming search</a> is querying fields that do not have an index structure.
+      The indexing cost is minimal as no index is generated.
+      A query is hence a scan over all data, and normally slower than using index structures.
+      Streaming search is used for applications like personal search, where the searched data volume is small.
+      It can be a powerful option to drastically limit memory use in nearest-neighbor applications
+      where the possible neighbor set it orders of magnitude smaller than the total.
+    </p>
+  </li>
+  <li>
+    <p id="tenant"><strong>Tenant</strong></p>
+    <p>
+      An organizational unit that owns <a href="#application">applications</a>.
+      In Vespa.ai APIs, <em>tenant</em> and <em>application</em> are always "default",
+      and a Vespa system has exactly <span style="text-decoration: underline">one</span> tenant
+      and <span style="text-decoration: underline">one</span> application.
+      In managed services like <a href="https://cloud.vespa.ai/">Vespa Cloud</a>,
+      multiple tenants and applications is supported -
+      <a href="https://cloud.vespa.ai/en/tenant-apps-instances">read more</a>.
     </p>
   </li>
   <li>
@@ -242,7 +400,7 @@ li > ul > li {
   <li>
     <p id="visit"><strong>Visit</strong></p>
     <p>
-      <a href="content/visiting.html">Visit</a> is a feature to efficiently get or process a set of / all documents,
+      <a href="visiting.html">Visit</a> is a feature to efficiently get or process a set of / all documents,
       identified by a <a href="reference/document-select-language.html">Document Selection Expression</a>.
       Visit iterates over all, or a set of, buckets and sends documents to a (set of) targets.
     </p>
@@ -250,20 +408,6 @@ li > ul > li {
 </ul>
 
 <!-- ToDo: (some will be combined into larger units):
-tenant
-instance
-deployment
-config server
-content node
-control plane
-data plane
-grouping
-boolean search / predicate
-federation
-nearest neighbor / HNSW
-document summary
-indexing
-index
 linguistics
 model / onnx / tensorflow
 kubernetes / EC2

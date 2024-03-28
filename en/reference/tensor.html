@@ -1,5 +1,5 @@
 ---
-# Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+# Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 title: "Tensor Reference"
 redirect_from:
 - /documentation/reference/tensor.html
@@ -27,8 +27,8 @@ redirect_from:
 
 <h2 id="tensor-type-spec">Tensor type spec</h2>
 <p>
-  Contained in <code><a href="schema-reference.html#constant">constant</a></code>
-  or <code><a href="schema-reference.html#type:tensor">tensor field type</a></code>.
+  Contained in <a href="schema-reference.html#constant">constant</a>
+  or <a href="schema-reference.html#tensor">tensor field type</a>.
   The dimensions of a tensor and the cell type defines its type.
   A tensor type contains a list of dimensions on the format:
 </p>
@@ -186,8 +186,9 @@ tensor&lt;float&gt;(x[2],y[3]):[1.0, 2.0, 3.0, 4.0, 5.0, 6.0]
 
 <h3 id="indexed-hex-form">Binary hex format</h3>
 <p>
-  Tensors representing binary data (fixed size, with <code>int8</code> cell value type) may be
-  input using a hexadecimal dump, similar to the corresponding feed format.
+  Tensors representing binary data (indexed tensors with <code>int8</code> cell value type) may be
+  represented using a hexadecimal representation, similar to the corresponding 
+  <a href="document-json-format.html#tensor-hex-dump">JSON tensor feed format</a>.
 </p>
 
 <h3 id="mapped-short-form">Mapped short form</h3>
@@ -219,14 +220,10 @@ tensor&lt;float&gt;(key{},x[2],y[3]):{ key1:[[1.0, 2.0, 3.0], [4.0, 5.0, 6.0]],
                                  key2:[[1.1, 2.1, 3.1], [4.1, 5.1, 6.1]] }
 </pre>
 
-
-
 <h2 id="tensor-functions">Tensor functions</h2>
 <p>
   Tensor functions are listed in the <a href="ranking-expressions.html#tensor-functions">expressions</a> documentation.
 </p>
-
-
 
 <h2 id="tensor-rank-features">Tensor rank features</h2>
 <p>
@@ -243,6 +240,6 @@ tensor&lt;float&gt;(key{},x[2],y[3]):{ key1:[[1.0, 2.0, 3.0], [4.0, 5.0, 6.0]],
 </ul>
 <p>Use the following reference documentation on how use tensors in documents:</p>
 <ul>
-  <li><a href="schema-reference.html#type:tensor">Tensor field in schema</a></li>
+  <li><a href="schema-reference.html#tensor">Tensor field in schema</a></li>
   <li><a href="document-json-format.html">Document JSON Format</a></li>
 </ul>

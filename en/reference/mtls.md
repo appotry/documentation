@@ -1,13 +1,12 @@
 ---
-# Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+# Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 title: "Mutually authenticated TLS (mTLS) reference"
 redirect_from:
 - /documentation/reference/mtls.html
 ---
 
-{% include note.html content="See [Securing Vespa with mutually authenticated TLS (mTLS)](../mtls.html) 
-on how to secure Vespa with mutually authenticated TLS."
-%}
+{% include note.html content="See [Securing a self-hosted Vespa application with mutually authenticated TLS (mTLS)](/en/operations-selfhosted/mtls.html) 
+for a practical guide." %}
 
 ## Environment variables
 
@@ -213,7 +212,7 @@ the Vespa TLS stack has some additional constraints that are always present:
 * Only cipher suites supporting [forward secrecy](https://en.wikipedia.org/wiki/Forward_secrecy) can be negotiated
   (i.e. cipher suites using ECDHE as part of their key exchange).
 * Only modern, symmetric ciphers with
-  [AEAD](https://en.wikipedia.org/wiki/Authenticated_encryption#Authenticated_encryption_with_associated_data_(AEAD))
+  [AEAD](https://en.wikipedia.org/wiki/Authenticated_encryption#Authenticated_encryption_with_associated_data)
   properties are supported. In practice this means [AES-GCM](https://en.wikipedia.org/wiki/AES-GCM) or
   [ChaCha20-Poly1305](https://en.wikipedia.org/wiki/ChaCha20-Poly1305).
   Supported cipher suites are listed [here](#cipher-suites).

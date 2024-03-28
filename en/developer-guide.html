@@ -1,5 +1,5 @@
 ---
-# Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+# Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 title: "Developer Guide"
 redirect_from:
 - /documentation/developer-guide.html
@@ -19,7 +19,7 @@ redirect_from:
     <a href="document-processing.html">Document processors</a> that can modify incoming write operations.
   </li>
   <li>
-    <a href="jdisc/developing-request-handlers.html">Handlers</a> that can implement custom web service API's.
+    <a href="jdisc/developing-request-handlers.html">Handlers</a> that can implement custom web service APIs.
   </li>
   <li>
     <a href="result-rendering.html">Renderers</a> that are used to define custom result formats.
@@ -32,7 +32,7 @@ redirect_from:
 <p>
 See the sample applications in <a href="getting-started.html">getting started</a>,
 to find examples of applications containing Java components.
-Also see <a href="operations/admin-procedures.html#troubleshooting">troubleshooting</a>.
+Also see <a href="/en/operations-selfhosted/admin-procedures.html#troubleshooting">troubleshooting</a>.
 </p>
 
 
@@ -62,13 +62,11 @@ Also see <a href="operations/admin-procedures.html#troubleshooting">troubleshoot
         This ensures that code and configuration is in sync, and loaded atomically when deployed.
         This is done by generating config classes from config definition files.
         In Vespa and application code,
-        configuration is therefore accessed through generated config classes -
-        read more in the <a href="config-introduction.html">
-        Cloud Configuration System</a>.
+        configuration is therefore accessed through generated config classes.
       </p><p>
       The Maven target <code>generate-sources</code> (invoked by <code>mvn install</code>) uses
-      <code><a href="https://github.com/vespa-engine/sample-apps/blob/master/album-recommendation-java/src/main/resources/configdefinitions/metal-names.def">
-        metal-names.def</a></code>
+      <a href="https://github.com/vespa-engine/sample-apps/blob/master/album-recommendation-java/src/main/resources/configdefinitions/metal-names.def">
+        metal-names.def</a>
       to generate <code>target/generated-sources/vespa-configgen-plugin/com/mydomain/example/MetalNamesConfig.java</code>.
     </p><p>
       After generating config classes, they will resolve in tools like
@@ -128,7 +126,7 @@ most managed services don't do this for security reasons." %}
     Make sure the port is published if using a Docker container, e.g.:
 <pre>
 $ docker run --detach --name vespa --hostname vespa-container \
-  --publish 8080:8080 --publish 19071:19071 <span class="pre-hilite">--publish 5005:5005</span> \
+  --publish 127.0.0.1:8080:8080 --publish 127.0.0.1:19071:19071 <span class="pre-hilite">--publish 127.0.0.1:5005:5005</span> \
   vespaengine/vespa
 </pre>
   </li>

@@ -1,5 +1,5 @@
 ---
-# Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+# Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 title: "Vespa Serving Scaling Guide"
 redirect_from:
 - /documentation/performance/sizing-search.html
@@ -18,7 +18,7 @@ This document helps sizing an application correctly with as low cost as possible
 Vespa is used to implement many use cases, and this document is relevant for all of them:
 </p>
 <ul>
-  <li>Serving a <a href="../text-matching-ranking.html">text ranking</a> use case
+  <li>Serving a <a href="../ranking.html#text-ranking">text ranking</a> use case
     or a <a href="../tutorials/news-1-getting-started.html">recommendation</a> use case</li>
   <li>Serving a machine learned model, e.g., a <a href="../tensorflow.html">Tensorflow</a>,
     <a href="../onnx.html">ONNX</a>, <a href="../xgboost.html">XGBoost</a>, or
@@ -173,7 +173,7 @@ for examples using grouped and flat data distribution.
 <p>
   Find an overview in <a href="../query-api.html#query-execution">query execution</a>:
 </p>
-<img src="/assets/img/query-to-response.svg" width="780px" height="auto"
+<img src="/assets/img/query-to-response.svg" width="645px" height="auto"
      alt="Query execution - from query to response"/>
 <p>
 Vespa executes a query in two protocol phases
@@ -498,6 +498,8 @@ This can be overridden to a lower value in
 so that different query use cases can use different number of threads per search.
 Using multiple threads per search allows better utilization of
 multi-core cpu architectures for low query volume applications.
+The persearch number in services should always be equal to the highest num-threads-per-search in your rank profiles.
+Setting it higher leaves threads unused.
 </p>
 
 <h4 id="thread-configuration">Thread configuration</h4>

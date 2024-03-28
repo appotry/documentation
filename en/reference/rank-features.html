@@ -1,5 +1,5 @@
 ---
-# Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+# Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 title: "Rank Feature Reference"
 redirect_from:
 - /documentation/reference/rank-features.html
@@ -9,7 +9,7 @@ redirect_from:
 This is the list of the rank features in Vespa.
 These features are available during document ranking for combination into a complete rank score by a
 <a href="ranking-expressions.html">ranking expression</a>.
-The features are a combination of coarse grained features suitable for hand-written expressions,
+The features are a combination of coarse grained features suitable for handwritten expressions,
 and finer grained features suitable for machine learning.
 </p><p>
 See also <a href="../ranking.html">the overview of the ranking framework</a>, and
@@ -128,7 +128,7 @@ Notes:
   <td>null</td>
   <td>
     <p id="attribute(name)">
-    The value of a <a href="schema-reference.html#type:tensor">tensor</a>
+    The value of a <a href="schema-reference.html#tensor">tensor</a>
     or single value <em>numeric</em> attribute or null/NaN if not set.
     Use <em>isNan()</em> to check if value is not defined.
     Using undefined values in ranking expressions leads to undefined behavior.
@@ -217,8 +217,8 @@ tensor&lt;double&gt;(dim{}):{ {dim:v1}:1.0, {dim:v2}:1.0, {dim:v3}:1.0} }
   to which a query matches the text of a field, but are expensive to calculate and therefore
   often only suitable for <a href="../phased-ranking.html">second-phase</a> ranking expressions.
   See the <a href="string-segment-match.html">string segment match</a> document
-  for details on the algorithm computing this rank-feateure set.
-  
+  for details on the algorithm computing this rank-feature set.
+
   Note that even using a fine-grained sub features like fieldMatch(<em>name</em>).absoluteOccurrence
   will have the same complexity and cost as using the general top level fieldMatch(<em>name</em>) feature.
 </td></tr>
@@ -807,13 +807,24 @@ tensor&lt;double&gt;(dim{}):{ {dim:v1}:1.0, {dim:v2}:1.0, {dim:v3}:1.0} }
     type, with one indexed dimension of size N, representing a point in an N-dimensional space.
   </p>
     <ul>
-      <li> <em>dimension</em>: Specifies the dimension of <em>name</em>.
-           This must be either the string <code>field</code> or the string
-           <code>label</code>.  When using <code>field</code>, the name given must be
-           a field with a tensor attribute of appropriate type.
-           When using <code>label</code>, queries are assumed to contain a
-           <a href="query-language-reference.html#nearestneighbor">nearestNeighbor</a> query item
-           with a label that matches the given <em>name</em>.
+      <li>
+        <p>
+          <em>dimension</em>: Specifies the dimension of <em>name</em>.
+          This must be either the string <code>field</code> or the string <code>label</code>.
+        </p>
+        <p>
+          When using <code>field</code>, the name given must be a field with a tensor attribute of appropriate type.
+          Often used when the document type has only one vector field,
+          see <a href="../nearest-neighbor-search.html#minimal-example">example</a>.
+        </p>
+        <p>
+          When using <code>label</code>, queries are assumed to contain a
+          <a href="query-language-reference.html#nearestneighbor">nearestNeighbor</a> query item
+          with a <a href="query-language-reference.html#label">label</a> that matches the given <em>name</em>.
+          This is useful when having multiple vector fields, where <code>closeness()</code> then maps
+          to the nearestNeighbor operator with the field configured.
+          <a href="../nearest-neighbor-search-guide.html#using-label">Example</a>.
+        </p>
       </li>
       <li> <em>name</em>: The value of the field name or label.
       </li>
@@ -969,9 +980,11 @@ tensor&lt;double&gt;(dim{}):{ {dim:v1}:1.0, {dim:v2}:1.0, {dim:v3}:1.0} }
     Given a tensor field with type <code>tensor&lt;float&gt;(m{},x[3])</code>
     used with the <em>nearestNeighbor</em> operator,
     an example output of this feature is:
-    <pre>
+    </p>
+<pre>
     tensor&lt;float&gt;(m{}):{ 3: 1.0 }
-    </pre>
+</pre>
+    <p>
     In this example, the document vector with label <em>3</em> in the mapped <em>m</em> dimension
     was closest to the query vector.
     </p>
@@ -1004,14 +1017,25 @@ tensor&lt;double&gt;(dim{}):{ {dim:v1}:1.0, {dim:v2}:1.0, {dim:v3}:1.0} }
     The document vectors and the query vector must be the same tensor
     type, with one indexed dimension of size N, representing a point in an N-dimensional space.
     <ul>
-      <li> <em>dimension</em>: Specifies the dimension of <em>name</em>.
-           This must be either the string <code>field</code> or the string
-           <code>label</code>.  When using <code>field</code>, the name given must be
-           a field with a tensor attribute of appropriate type.
-           When using <code>label</code>, queries are assumed to contain a
-           NearestNeighbor query item with a label that matches the
-           given <em>name</em>.
-      </li>
+    <li>
+      <p>
+        <em>dimension</em>: Specifies the dimension of <em>name</em>.
+        This must be either the string <code>field</code> or the string <code>label</code>.
+      </p>
+      <p>
+        When using <code>field</code>, the name given must be a field with a tensor attribute of appropriate type.
+        Often used when the document type has only one vector field,
+        see <a href="../nearest-neighbor-search.html#minimal-example">example</a>.
+      </p>
+      <p>
+        When using <code>label</code>, queries are assumed to contain a
+        <a href="query-language-reference.html#nearestneighbor">nearestNeighbor</a> query item
+        with a <a href="query-language-reference.html#label">label</a> that matches the given <em>name</em>.
+        This is useful when having multiple vector fields, where <code>distance()</code> then maps
+        to the nearestNeighbor operator with the field configured.
+        <a href="../nearest-neighbor-search-guide.html#using-label">Example</a>.
+      </p>
+    </li>
       <li> <em>name</em>: The value of the field name or label.
       </li>
     </ul>
@@ -1043,7 +1067,7 @@ tensor&lt;double&gt;(dim{}):{ {dim:v1}:1.0, {dim:v2}:1.0, {dim:v3}:1.0} }
   <td>711648.5</td>
   <td>
     <p id="distance(name).km">
-      As above, but scaled so it uses the kilometer as unit of distance, instead of "micro-degrees".
+      As above, but scaled, so it uses the kilometer as unit of distance, instead of "micro-degrees".
     </p>
   </td></tr>
 
@@ -1233,7 +1257,7 @@ tensor&lt;double&gt;(dim{}):{ {dim:v1}:1.0, {dim:v2}:1.0, {dim:v3}:1.0} }
 
 <tr><td>nativeProximity(field,...)</td>
   <td>0</td>
-  <td>@
+  <td>
     <p id="nativeProximity(field,...)">
       Same as <em>nativeProximity</em>, but only the given set of index fields are used in the calculation.
     </p>
@@ -1570,6 +1594,42 @@ tensor&lt;double&gt;(dim{}):{ {dim:v1}:1.0, {dim:v2}:1.0, {dim:v3}:1.0} }
         </p>
     </td>
 </tr>
+
+<tr>
+  <td>customTokenInputIds(<em>start_sequence_id</em>, <em>sep_sequence_id</em><em>length</em>, <em>input_1</em>, <em>input_2</em>, <em>...</em>)</td>
+  <td>n/a</td>
+  <td>
+      <p id="customTokenInputIds(start_sequence_id, sep_sequence_id, length, input_1, input_2, ...)">
+      Convenience function for generating token sequence input to Transformer models.
+      Creates a tensor with dimensions <code>d0[1], d1[length]</code>, where
+      <code>d0</code> is the batch dimension and <code>d1</code> is the maximum length
+      of the token sequence. Assumes the inputs are zero-padded tensors representing
+      token sequences. The result is the token sequence:
+      </p>
+
+      <p>
+      <code>start_sequence_id + input_1 + sep_sequence_id + input_2 + sep_sequence_id + ... + 0's</code>
+      </p>
+
+      <ul>
+          <li><em>start_sequence_id</em>The start sequence id, typically <em>1</em></li>
+          <li><em>sep_sequence_id</em>The separator sequence id, typically <em>2</em></li>
+          <li><em>length</em>:  The maximum length of the token sequence</li>
+          <li><em>input_N</em>: Where to retrieve input from. At least one is required.</li>
+      </ul>
+
+      <p>
+      The inputs are typically retrieved from the query, document attributes or constants.
+      For instance, <code>customTokenInputIds(1,2,128, query(my_input), attribute(my_field))</code>
+      where input types are:
+      </p>
+      <ul>
+          <li><code>query(my_input): tensor(d0[32])</code></li>
+          <li><code>attribute(my_field): tensor(d0[128])</code></li>
+      </ul>
+  </td>
+</tr>
+
 
 <tr>
     <td>tokenTypeIds(<em>length</em>, <em>input_1</em>, <em>input_2</em>, <em>...</em>)</td>

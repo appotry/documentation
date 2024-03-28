@@ -1,5 +1,5 @@
 ---
-# Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+# Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 title: "Vespa Serving Tuning"
 redirect_from:
 - /documentation/performance/feature-tuning.html
@@ -19,7 +19,7 @@ redirect_from:
   The <a href="../attributes.html">attribute</a> documentation summaries when to use
   <a href="../reference/schema-reference.html#attribute">attribute</a>
   in the <a href="../reference/schema-reference.html#indexing">indexing</a> statement.
-  Also see the <a href="../operations/admin-procedures.html#schema-changes">procedure</a>
+  Also see the <a href="/en/schemas.html#schema-modifications">procedure</a>
   for changing from attribute to index and vice-versa.
 </p>
 <pre>
@@ -226,7 +226,7 @@ search news {
 
 <h2 id="indexing-uuids">Indexing uuids</h2>
 <p>
-  When configuring <a href="../reference/schema-reference.html#type:string">string</a>
+  When configuring <a href="../reference/schema-reference.html#string">string</a>
   type fields with <code>index</code>,
   the default <a href="../reference/schema-reference.html#match">match</a> mode is <code>text</code>.
   This means Vespa will <a href="../linguistics.html#tokenization">tokenize</a> the content and index the tokens.
@@ -285,7 +285,7 @@ field uuid type string {
   The first-phase should be focused on getting decent recall (retrieve relevant documents in the top k),
   while second phase is used to tune precision.
 </p><p>
-  For <a href="../text-matching-ranking.html">text ranking</a> applications,
+  For <a href="../ranking.html#text-ranking">text ranking</a> applications,
   consider using the <a href="../using-wand-with-vespa.html">WAND</a> query operator -
   WAND can efficiently (sublinear) find the top k documents using an inner scoring function.
 </p>
@@ -302,39 +302,64 @@ select * from sources * where user_id = 1 or user_id = 2 or user_id = 3 or user_
 </pre>
 <p>
   For OR filters over the same field it is strongly recommended using the
-  <a href="../reference/query-language-reference.html#weightedset">weighted set query operator</a>.
-  It has considerably less overhead than plain OR for set filtering:
+  <a href="../reference/query-language-reference.html#in">in query operator</a> instead.
+  It has considerably better performance than plain OR for set filtering:
 </p>
 <pre>
-select * from sources * where weightedSet(user_id, {"1":1, "2":1, "3":1})
+select * from sources * where user_id in (1, 2, 3, 4, 5)
 </pre>
+{% include note.html content='
+Large sets can slow down YQL-parsing of the query -
+see <a href="../reference/query-language-reference.html#parameter-substitution">parameter substitution</a>
+for how to send the set in a compact, performance-effective way.'%}
 <p>
   Attribute fields used like the above without other stronger query terms,
-  should have <code>fast-search</code> and <code>rank:filter</code>.
+  should have <code>fast-search</code> and <code>rank: filter</code>.
   If there is a large number of unique values in the field,
-  it is faster to use <code>hash</code> dictionary instead of <code>btree</code>,
+  it is also faster to use <code>hash</code> dictionary instead of <code>btree</code>,
   which is the default data structure for dictionaries for attribute fields with <code>fast-search</code>:
 </p>
 <pre>
 field user_id type long {
-  indexing: summary | attribute
-  attribute:fast-search
-  dictionary:hash
-  rank:filter
+    indexing:   summary | attribute
+    attribute:  fast-search
+    dictionary: hash
+    rank:       filter
 }
 </pre>
 <p>
-  E.g. if having 10M unique user_ids in the dictionary, a search for 1000 users per query,
-  <em>btree</em> dictionary would be 1000 lookup times log(10M),
-  while <em>hash</em> based would be 1000 lookups times 1.
+  For <code>string</code> fields, we also need to include <a href="/en/reference/schema-reference.html#match">match</a>
+  settings if using the <code>hash</code> dictionary:</p>
+<pre>
+field user_id_str type string {
+    indexing:   summary | attribute
+    attribute:  fast-search
+    match:      cased	
+    rank:       filter
+    dictionary { 
+        hash
+        cased
+    }
+}
+</pre>
+<p>
+If having 10M unique user_ids in the dictionary and searching for 1000 users per query,
+the <em>btree</em> dictionary would be 1000 lookup times log(10M),
+while <em>hash</em> based would be 1000 lookups times O(1). Still, the <em>btree</em> dictionary
+offers more flexiblity in terms of <a href="/en/reference/schema-reference.html#match">match</a> settings.
 </p>
 <p>
-  The <code>weightedSet</code> query set filtering approach works great in combination with <em>TAAT</em>,
-  see <a href="#hybrid-taat-daat">hybrid TAAT/DAAT</a> section.
+  The <code>in</code> query set filtering approach can be used in combination with hybrid <em>TAAT</em>,
+  evaluation to further improve performance. See the <a href="#hybrid-taat-daat">hybrid TAAT/DAAT</a> section.
 </p>
 <p>
   Also see the <a href="../reference/schema-reference.html#dictionary">dictionary schema reference</a>.
 </p>
+
+{% include note.html content='
+For most use cases, the time spent on dictionary traversal is neglicable compared to the time spent on
+query evaluation (matching and ranking). If the query is very selective, for example, using
+vespa as key-value lookup store with ranking support, the dictionary traversal time can be significant.'%}
 
 <h2 id="document-summaries-hits">Document summaries - hits</h2>
 <p>
@@ -511,9 +536,7 @@ Refer to <a href="../attributes.html">attributes</a> for details.
 
 
 <h3 id="Inner-outer-products">Inner/outer products</h3>
-<p>
-  Following is a primer into inner/outer products and execution details:
-</p>
+<p>The following is a primer into inner/outer products and execution details:</p>
 <table class="table">
   <thead>
   <tr>
@@ -531,9 +554,11 @@ Refer to <a href="../attributes.html">attributes</a> for details.
     <td style="white-space: nowrap;">tensor(x[3]):[4.0, 10.0, 18.0]</td>
     <td>32</td>
     <td>
-      <a href="https://docs.vespa.ai/playground/#N4KABGBEBmkFxgNrgmUrWQPYAd5QFNIAaFDSPBdDTAO30gEMSybIiFIAXA2gZywAnABQAPRAGYAugEo4iAIzEwAJmXTIrCAF9W20hmrlcDIgbaU0WugwBGLGpg5Qe-IWMmz5AFmUBWZQA2KU1HXQx9ViNME04zawp8aPJ6TlhzR3YGRgAqe2tw1EjDBNjCBwsk6whIVKhoAFdaAGMKzOdIPgaAW2Fc2xlQmkKdFCkQbSA">
+      <p id="inner-product">
+        <a href="https://docs.vespa.ai/playground/#N4KABGBEBmkFxgNrgmUrWQPYAd5QFNIAaFDSPBdDTAO30gEMSybIiFIAXA2gZywAnABQAPRAGYAugEo4iAIzEwAJmXTIrCAF9W20hmrlcDIgbaU0WugwBGLGpg5Qe-IWMmz5AFmUBWZQA2KU1HXQx9ViNME04zawp8aPJ6TlhzR3YGRgAqe2tw1EjDBNjCBwsk6whIVKhoAFdaAGMKzOdIPgaAW2Fc2xlQmkKdFCkQbSA">
         Playground example</a>.
-      The dimension name and size is the same in both tensors - this is an inner product, with a scalar result.
+        The dimension name and size is the same in both tensors - this is an inner product, with a scalar result.
+      </p>
     </td>
   </tr>
   <tr>
@@ -542,10 +567,12 @@ Refer to <a href="../attributes.html">attributes</a> for details.
     <td>tensor(x[3],y[3]):[<br/>[4.0, 5.0, 6.0],<br/>[8.0, 10.0, 12.0],<br/>[12.0, 15.0, 18.0] ]</td>
     <td>90</td>
     <td>
-      <a href="https://docs.vespa.ai/playground/#N4KABGBEBmkFxgNrgmUrWQPYAd5QFNIAaFDSPBdDTAO30gEMSybIiFIAXA2gZywAnABQAPRAGYAugEo4iAIzEwAJmXTIrCAF9W20hmrlcDIgbaU0WugwBGLGpg5Qe-IWMmz5AFmUBWZQA2KU1HXQx9ViNME04zawp8aPJ6TlhzR3YGRgAqe2tw1EjDBNjCBwsk6whIVKhoAFdaAGMKzOdIPgaAW2Fc2xlQmkKdFCkQbSA">
+      <p id="outer-product-same-dimensions">
+        <a href="https://docs.vespa.ai/playground/#N4KABGBEBmkFxgNrgmUrWQPYAd5QFNIAaFDSPBdDTAO30gEMSybIiFIAXA2gZywAnABQAPRAGYAugEo4iAIzEwAJmXTIrCAF9W20hmrlcDIgbaU0WugwBGLGpg5Qe-IWMmz5AFmUBWZQA2KU1HXQx9ViNME04zawp8aPJ6TlhzR3YGRgAqe2tw1EjDBNjCBwsk6whIVKhoAFdaAGMKzOdIPgaAW2Fc2xlQmkKdFCkQbSA">
         Playground example</a>.
-      The dimension size is the same in both tensors, but dimensions have different names -&gt;
-      this is an outer product, the result is a two-dimensional tensor.
+        The dimension size is the same in both tensors, but dimensions have different names -&gt;
+        this is an outer product, the result is a two-dimensional tensor.
+      </p>
     </td>
   </tr>
   <tr>
@@ -554,9 +581,11 @@ Refer to <a href="../attributes.html">attributes</a> for details.
     <td>undefined</td>
     <td></td>
     <td>
-      <a href="https://docs.vespa.ai/playground/#N4KABGBEBmkFxgNrgmUrWQPYAd5QFNIAaFDSPBdDTAO30gEMSybIiFIAXA2gZywAnABQAPRAGYAugEo4iAIzEwAJmXTIrCAF9W20hmrlcDIgbaU0WugwBGLGpg5Qe-IWMQrZ8gCzKArFKajroY+qxGmCacZtYU+JHk9Jyw5o7sDIwAVPbWoajhhnHRhA4WCdYQkMlQ0ACutADGZenOkHx1ALbC2bYywTT5OihSINpAA">
+      <p id="undefined">
+        <a href="https://docs.vespa.ai/playground/#N4KABGBEBmkFxgNrgmUrWQPYAd5QFNIAaFDSPBdDTAO30gEMSybIiFIAXA2gZywAnABQAPRAGYAugEo4iAIzEwAJmXTIrCAF9W20hmrlcDIgbaU0WugwBGLGpg5Qe-IWMQrZ8gCzKArFKajroY+qxGmCacZtYU+JHk9Jyw5o7sDIwAVPbWoajhhnHRhA4WCdYQkMlQ0ACutADGZenOkHx1ALbC2bYywTT5OihSINpAA">
         Playground example</a>.
-      Two tensors in same dimension, but with different length -&gt; undefined.
+        Two tensors in same dimension, but with different length -&gt; undefined.
+      </p>
     </td>
   </tr>
   <tr>
@@ -565,10 +594,12 @@ Refer to <a href="../attributes.html">attributes</a> for details.
     <td>tensor(x[3],y[2]):[<br/>[4.0, 5.0],<br/>[8.0, 10.0],<br/>[12.0, 15.0] ]</td>
     <td>54</td>
     <td>
-      <a href="https://docs.vespa.ai/playground/#N4KABGBEBmkFxgNrgmUrWQPYAd5QFNIAaFDSPBdDTAO30gEMSybIiFIAXA2gZywAnABQAPRAGYAugEo4iAIzEwAJmXTIrCAF9W20hmrlcDIgbaU0WugwBGLGpg5Qe-IcICeiFbPkAWZQBWKU1HXQx9ViNME04zawp8aPJ6TlhzR3YGRgAqe2tw1EjDBNjCBwsk6whIVKhoAFdaAGMKzOdIPgaAW2Fc2xlQmkKdFCkQbSA">
+      <p id="outer-product-different-dimensions">
+        <a href="https://docs.vespa.ai/playground/#N4KABGBEBmkFxgNrgmUrWQPYAd5QFNIAaFDSPBdDTAO30gEMSybIiFIAXA2gZywAnABQAPRAGYAugEo4iAIzEwAJmXTIrCAF9W20hmrlcDIgbaU0WugwBGLGpg5Qe-IcICeiFbPkAWZQBWKU1HXQx9ViNME04zawp8aPJ6TlhzR3YGRgAqe2tw1EjDBNjCBwsk6whIVKhoAFdaAGMKzOdIPgaAW2Fc2xlQmkKdFCkQbSA">
         Playground example</a>.
-      Two tensors with different names and dimensions -&gt;
-      this is an outer product, the result is a two-dimensional tensor.
+        Two tensors with different names and dimensions -&gt;
+        this is an outer product, the result is a two-dimensional tensor.
+      </p>
     </td>
   </tr>
   </tbody>

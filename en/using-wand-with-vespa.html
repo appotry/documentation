@@ -1,5 +1,5 @@
 ---
-#Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+#Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 title: "Accelerated OR search using the WAND algorithm"
 redirect_from:
 - /documentation/using-wand-with-vespa.html
@@ -197,7 +197,7 @@ select * from passages where (
 <p>
   Often times, for the performance reasons listed above, it is preferable to use weakAnd instead of OR.
   To enable this behavior, set the query property
-  <code><a href="reference/query-api-reference.html#weakand.replace">weakAnd.replace</a></code> to true.
+  <a href="reference/query-api-reference.html#weakand.replace">weakAnd.replace</a> to true.
 </p>
 
 
@@ -205,7 +205,7 @@ select * from passages where (
 <h2 id="wand">wand</h2>
 <p>
   The <a href="reference/query-language-reference.html#wand">wand query operator</a>
-  works over a single <a href="reference/schema-reference.html#type:weightedset">weightedset field</a>
+  works over a single <a href="reference/schema-reference.html#weightedset">weightedset field</a>
   which can be both string or numeric (int/long) - the weight is always int.
 </p><p>
   Weighted sets of string must be configured with

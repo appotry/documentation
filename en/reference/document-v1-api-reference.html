@@ -1,5 +1,5 @@
 ---
-# Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+# Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 title: "/document/v1 API reference"
 redirect_from:
 - /documentation/reference/document-v1-api-reference.html
@@ -12,11 +12,13 @@ redirect_from:
 </p><p>
   The <a href="../document-v1-api-guide.html">document/v1 API guide</a> has examples and use cases.
 </p>
-
+{% include note.html content='
+Mapping from document IDs to /document/v1/ URLs is found in <a href="../documents.html#id-scheme">document IDs</a> -
+also see <a href="../document-v1-api-guide.html#troubleshooting">troubleshooting</a>.'%}
 <p>
-  Many of the examples uses <em>number</em> and <em>group</em>
+  Some examples use <em>number</em> and <em>group</em>
   <a href="../documents.html#document-ids">document id</a> modifiers.
-  Do note that these are special cases that only work as expected for document types
+  These are special cases that only work as expected for document types
   with <a href="services-content.html#document">mode=streaming or mode=store-only</a>.
   Do not use group or number modifiers with regular indexed mode document types.
 </p>
@@ -131,6 +133,7 @@ redirect_from:
         <li><a href="#wanteddocumentcount">wantedDocumentCount</a></li>
         <li><a href="#fromtimestamp">fromTimestamp</a></li>
         <li><a href="#totimestamp">toTimestamp</a></li>
+        <li><a href="#includeRemoves">includeRemoves</a></li>
       </ul>
     </td>
   </tr>
@@ -434,7 +437,7 @@ redirect_from:
     The route for single document operations, and for operations generated
     by <a href="#copy">copy</a>, <a href="#update-where">update</a> or
     <a href="#delete-where">deletion</a> visits. Default value is <code>default</code>.
-    See <a href="../routing.html">routes</a>.
+    See <a href="/en/operations-selfhosted/routing.html">routes</a>.
     </p>
   </td>
 </tr><tr>
@@ -442,7 +445,7 @@ redirect_from:
   <td>String</td>
   <td>
     <p id="selection">
-    Select only a subset of documents when <a href="../content/visiting.html">visiting</a> —
+    Select only a subset of documents when <a href="../visiting.html">visiting</a> —
     details in <a href="document-select-language.html">document selector language</a>.
     </p>
   </td>
@@ -546,7 +549,7 @@ redirect_from:
     <p id="tracelevel">
     Number in the range [0,9], where higher gives more details.
     The trace dumps which nodes and chains the document operation has touched.
-    See <a href="../routing.html">routes</a>.
+    See <a href="/en/operations-selfhosted/routing.html">routes</a>.
     </p>
   </td>
 </tr><tr>
@@ -586,6 +589,21 @@ redirect_from:
       at a time point lower than the specified value, in microseconds from UTC epoch.
       Default value is 0 (sentinel value; include all documents). If non-zero, must be
       greater than, or equal to, <code>fromTimestamp</code>.
+    </p>
+  </td>
+</tr><tr>
+  <th>includeRemoves</th>
+  <td>Boolean</td>
+  <td>
+    <p id="includeRemoves">
+      Include recently removed document IDs, along with the set of returned documents.
+      By default, only documents currently present in the corpus are returned in the
+      <code>"documents"</code> array of the response; when this parameter is set to
+      <code>"true"</code>, documents that were recently removed, and whose tombstones
+      still exist, are also included in that array, as entries on the form
+      <code>{ "remove": "id:ns:type::foobar" }</code>. See
+      <a href="/en/operations-selfhosted/admin-procedures.html#data-retention-vs-size">here</a>
+      for specifics on tombstones, including their lifetime.
     </p>
   </td>
 </tr>
@@ -672,9 +690,6 @@ redirect_from:
   <th>500</th>
   <td>Server error; an unspecified error occurred when processing the request/response.</td>
 </tr><tr>
-  <th>502</th>
-  <td>Bad gateway; the document API gave an error response.</td>
-</tr><tr>
   <th>503</th>
   <td>Service unavailable; the document API was unable to produce a response at this time.</td>
 </tr><tr>
@@ -753,7 +768,7 @@ GET can include a <code>fields</code> object if a document was found in a <em>GE
 {% endhighlight %}</pre>
 <p>
 A GET <em>visit</em> result can include an array of <code>documents</code>
-plus a <code><a href="#continuation">continuation</a></code>:
+plus a <a href="#continuation">continuation</a>:
 </p>
 <pre>{% highlight json %}
 {

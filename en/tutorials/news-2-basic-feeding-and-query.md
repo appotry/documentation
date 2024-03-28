@@ -1,5 +1,5 @@
 ---
-# Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+# Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 title: "News search and recommendation tutorial - applications, feeding and querying"
 redirect_from:
 - /documentation/tutorials/news-2-basic-feeding-and-query.html
@@ -28,7 +28,7 @@ before moving on to the next part of the tutorial: searching for content.
 
 For reference, the final state of this tutorial can be found in the
 [app-2-feed-and-query](https://github.com/vespa-engine/sample-apps/tree/master/news/app-2-feed-and-query)
-sub-directory of the `news` sample application.
+subdirectory of the `news` sample application.
 
 
 ## The Microsoft News Dataset
@@ -117,7 +117,7 @@ availability](https://github.com/vespa-engine/sample-apps/tree/master/examples/o
 sample application. 
 
 We mentioned these files in the previous part but didn't really explain them at the time.
-We'll go through them here, starting with the services specification.
+We'll go through them here, starting with the specification of services.
 
 
 ### Services Specification
@@ -246,7 +246,7 @@ This document contains several fields. Each field has a
 `tensor`. Fields also have properties. For instance, property `indexing`
 configures the _indexing pipeline_ for a field, which defines how Vespa will
 treat input during indexing — see [indexing
-language](../reference/advanced-indexing-language.html). Each part of the
+language](../reference/indexing-language-reference.html). Each part of the
 indexing pipeline is separated by the pipe character '|':
 
 - `index:` Create a search index for this field.
@@ -297,20 +297,18 @@ $ python3 src/python/convert_to_vespa_format.py mind
 The argument is where to find the downloaded data above, which was in the
 `mind` directory. This script creates a new file in that directory called
 `vespa.json`. This contains all 28603 news articles in the data set. This
-file can now be fed to Vespa. Use the method described in the previous part,
-using the `vespa-feed-client`:
+file can now be fed to Vespa. Use the method described in the previous part:
 
 <div class="pre-parent">
   <button class="d-icon d-duplicate pre-copy-button" onclick="copyPreContent(this)"></button>
 <pre data-test="exec">
-$ ./vespa-feed-client-cli/vespa-feed-client \
-  --verbose --file mind/vespa.json --endpoint http://localhost:8080
+$ vespa feed mind/vespa.json --target http://localhost:8080
 </pre>
 </div>
 
-The `vespa-feed-client` can read an JSON array of document operations, or JSONL with
-one Vespa document JSON formatted operation per line. Once the feed job finishes, 
-all our 28 603 documents are searchable, let us do a quick query to verify:
+`vespa feed` reads a JSON array of document operations,
+or JSONL with one Vespa document JSON formatted operation per line.
+Once the feed job finishes, all our 28 603 documents are searchable, let us do a quick query to verify:
 
 <div class="pre-parent">
   <button class="d-icon d-duplicate pre-copy-button" onclick="copyPreContent(this)"></button>

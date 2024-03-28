@@ -1,5 +1,5 @@
 ---
-# Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. 
+# Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. 
 title: "Approximate Nearest Neighbor Search using HNSW Index"
 keywords: "ann, approximate nearest neighbor"
 redirect_from:
@@ -62,7 +62,7 @@ field image_embeddings type tensor&lt;float&gt;(i{},x[512]) {
 field text_embedding type tensor&lt;float&gt;(x[384]) {
   indexing: summary | attribute | index
   attribute {
-    distance-metric: innerproduct
+    distance-metric: prenormalized-angular
   }
   index {
     hnsw {
@@ -169,7 +169,7 @@ but this is less relevant as the `HNSW` index search first reduces the document 
 
 * **targetHits**:
 The [targetHits](reference/query-language-reference.html#targethits)
-specifies how many hits one wants to expose to [ranking](ranking.html) *per conent node*.
+specifies how many hits one wants to expose to [ranking](ranking.html) *per content node*.
 Nearest neighbor search is typically used as an efficient retriever in a [phased ranking](phased-ranking.html)
 pipeline. See [performance sizing](performance/sizing-search.html). 
 

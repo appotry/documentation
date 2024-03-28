@@ -1,5 +1,5 @@
 ---
-# Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+# Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 title: "services.xml - 'search'"
 redirect_from:
 - /documentation/reference/services-search.html
@@ -28,18 +28,14 @@ redirect_from:
                 <a href="#federationoptions">federationoptions [timeout, requestTimeout, optional]</a>
             <a href="#source-set">source-set [inherits]</a>
             <a href="#target-selector">target-selector</a>
-    <a href="#provider">provider [id, type, cluster, excludes, path, cacheweight,
-              readtimeout, connectiontimeout, connectionpooltimeout, retries]</a>
+    <a href="#provider">provider [id, type, cluster, excludes]</a>
         <a href="#federationoptions">federationoptions [timeout, requestTimeout, optional]</a>
         <a href="#source">source [id]</a>
             <a href="#searcher">searcher [id, class, bundle, provides, before, after]</a>
-        <a href="#nodes">nodes</a>
-            <a href="#node">node</a>
     <a href="#renderer">renderer [id, class, bundle]</a>
     <a href="#threadpool">threadpool</a>
-        <a href="#threadpool-max-threads">max-threads</a>
-        <a href="#threadpool-min-threads">min-threads</a>
-        <a href="#threadpool-queue-size">queue-size</a>
+        <a href="#threadpool-threads">threads [ boost ]</a>
+        <a href="#threadpool-queue">queue</a>
 </pre>
 <p>
   <a href="config-files.html#generic-configuration-in-services-xml">config</a>
@@ -343,9 +339,10 @@ it overrides the options of the search chain when used from the enclosing federa
   Note that <a href="#provider">provider</a> and <a href="#source">source</a> elements are also chains.
   Specify a search chain in a query using <a href="query-api-reference.html#searchchain">searchChain</a>.
 </p>
-<p>Example:</p>
+<p>Example which inherits from the built in <em>vespa</em> chain so that 
+  the searcher can dispatch queries to the content clusters:</p>
 <pre>
-&lt;chain id="common"&gt;
+&lt;chain id="common" inherits="vespa"&gt;
     &lt;searcher class="com.yahoo.vespatest.ExtraHitSearcher" id="CommonSearcher" bundle="the name in &lt;artifactId&gt; in your pom.xml" &gt;
         &lt;config name="vespatest.extra-hit"&gt;
             &lt;exampleString&gt;A searcher for ...&lt;/exampleString&gt;
@@ -405,7 +402,7 @@ the modular search chains will be available in all the clusters."%}
       <td><p id="provider.excludes"></p></td></tr>
     <tr><th>type</th>
       <td>optional</td>
-      <td>http/vespa/local</td>
+      <td>local</td>
       <td></td>
       <td>
         <p id="provider.type">
@@ -438,92 +435,6 @@ the modular search chains will be available in all the clusters."%}
 <pre>
 &lt;provider id="music" cluster="music" type="local" excludes="com.yahoo.prelude.querytransform.StemmingSearcher" /&gt;
 </pre>
-
-
-<h3 id="http-provider">http provider</h3>
-<p>
-  Http providers are providers which either have the attribute <code>type=vespa</code>
-  or no type but contains a component subclassing HTTPSearcher.
-</p>
-<p>
-  An http provider has a <a href="#nodes">nodes</a> element for endpoints.
-</p>
-<table class="table">
-  <thead>
-    <tr><th>Attribute</th><th>Required</th><th>Value</th><th>Default</th><th>Description</th></tr>
-  </thead><tbody>
-    <tr><th>cacheweight</th>
-      <td>optional</td>
-      <td>number</td>
-      <td></td>
-      <td>
-        <p id="provider.cacheweight">
-          A non-negative floating point number determining how
-          much of the memory reserved for caching should be allocated to this provider
-        </p>
-      </td></tr>
-    <tr><th>path</th>
-      <td>optional</td>
-      <td></td>
-      <td></td>
-      <td><p id="provider.path">the location of the resource</p>
-      </td></tr>
-    <tr><th>readtimeout</th>
-      <td>optional</td>
-      <td></td>
-      <td></td>
-      <td>
-        <p id="provider.readtimeout">
-          the HTTP client's socket timeout.
-          Normally, this value is calculated dynamically by Vespa.
-          (The timeout is basically the timeout for blocking read operations from the network.)
-          Valid units are <em>s</em> and <em>ms</em>, as in <em>2.5s</em> and <em>500 ms</em>.
-        </p>
-      </td></tr>
-    <tr><th>connectiontimeout</th>
-      <td>optional</td>
-      <td></td>
-      <td></td>
-      <td>
-        <p id="provider.connectiontimeout">
-          Timeout for connecting to the provider.
-          Normally, this value is calculated dynamically by Vespa.
-          Valid units are <em>s</em> and <em>ms</em>.
-        </p>
-      </td></tr>
-    <tr><th>connectionpooltimeout</th>
-      <td>optional</td>
-      <td></td>
-      <td></td>
-      <td>
-        <p id="provider.connectionpooltimeout">
-          Timeout for acquiring a connection if using pooled connection.
-          Should not be necessary to tweak under normal circumstances.
-          Valid units are <em>s</em> and <em>ms</em>.
-        </p>
-      </td></tr>
-    <tr><th>retries</th>
-      <td>optional</td>
-      <td></td>
-      <td>1</td>
-      <td>
-        <p id="provider.retries">
-          The number of times to retry an HTTP operation if the error is assumed to be transient
-        </p>
-      </td></tr>
-  </tbody>
-</table>
-<p>Example:</p>
-<!-- ToDo check: is http default? -->
-<pre>
-&lt;provider id="webService"&gt;
-    &lt;nodes&gt;
-        &lt;node port="8080" host="webservice.host"/&gt;
-    &lt;/nodes&gt;
-    &lt;searcher id="com.yahoo.example.ExampleProviderSearcher" bundle="the name in &lt;artifactId&gt; in your pom.xml" /&gt;
-&lt;/provider&gt;
-</pre>
-
 
 
 <h2 id="source">source</h2>
@@ -563,62 +474,38 @@ Defines a source search chain and an associated source.
 </p>
 
 
-
-<h2 id="nodes">nodes</h2>
+<h2 id="threadpool">threadpool</h2>
 <p>
-  Container for <a href="#node">node</a> elements.
+  Specifies configuration for the thread pool for the jdisc search handler. All parameters are relative to the number of CPU cores -
+  if a node has 8 vCPU with <code>threads=4</code>, the thread pool will have 32 threads.
+  Same for queue size - if <code>queue=10</code>, the queue will have capacity for 80 entries.
+  If the <code>boost</code> attribute is specified, additional threads will be created on demand once the request queue is full.
+  These threads are then destructed after idling for a fixed amount of time.
+  Requests are rejected once the maximum number of allowed threads is reached, all threads are busy and the request queue is full.
+  See <a href="../performance/container-tuning.html">Container Tuning</a> for more details.
 </p>
 
-
-
-<h2 id="node">node</h2>
+<h2 id="threadpool-threads">threads</h2>
 <p>
-Used by http/vespa providers to specify endpoints.
+  The number of permanent threads relative to CPU cores. Default value is <code>2</code>.
 </p>
 <table class="table">
   <thead>
-    <tr><th>Attribute</th><th>Required</th><th>Value</th><th>Default</th><th>Description</th></tr>
+  <tr><th>Attribute</th><th>Required</th><th>Value</th><th>Default</th><th>Description</th></tr>
   </thead><tbody>
-    <tr><th>host</th>
-      <td>required</td>
-      <td>string</td>
-      <td></td>
-      <td><p id="node.host">hostname</p></td></tr>
-    <tr><th>port</th>
-      <td>required</td>
-      <td>number</td>
-      <td></td>
-      <td><p id="node.port">port</p></td></tr>
-  </tbody>
+<tr><th>boost</th>
+  <td>optional</td>
+  <td>number</td>
+  <td></td>
+  <td>
+    <p id="threads.boost">
+      The number of additional threads relative to CPU cores. Default value is <code>2</code>.
+    </p>
+  </td></tr>
+</tbody>
 </table>
 
-
-
-<h2 id="threadpool">threadpool</h2>
+<h2 id="threadpool-queue">queue</h2>
 <p>
-  Contains configuration of the threadpool for the jdisc search handler.
-  The pool is initialized with minimum number of threads during startup.
-  Additional threads will be created on demand once the request queue is full.
-  Requests are rejected once maximum threads are reached, all threads are busy and the request queue is full.
-</p>
-
-
-
-<h2 id="threadpool-max-threads">max-threads</h2>
-<p>
-  Maximum number of threads in pool.
-</p>
-
-
-
-<h2 id="threadpool-min-threads">min-threads</h2>
-<p>
-  Minimum number of threads in pool.
-</p>
-
-
-
-<h2 id="threadpool-queue-size">queue-size</h2>
-<p>
-  Request queue size.
+  The size of the request queue relative to CPU cores. Specify <code>0</code> to disable queuing. Default value is <code>40</code>.
 </p>

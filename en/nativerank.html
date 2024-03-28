@@ -1,5 +1,5 @@
 ---
-# Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+# Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 title: "Ranking With nativeRank"
 redirect_from:
 - /documentation/nativerank.html
@@ -192,7 +192,7 @@ rank-profile blog inherits default {
     weight body: 100
     rank-type body: about
     rank-properties {
-      nativeFieldMatch.occurrenceCountTable.title: &quot;linear(0,8000)&quot; #Example of nativeRank tuning, override the occurrence boost shape to be flat
+      nativeFieldMatch.occurrenceCountTable.title: "linear(0,8000)" 
     }
 
     # our freshness rank feature

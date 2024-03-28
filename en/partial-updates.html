@@ -1,5 +1,5 @@
 ---
-# Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+# Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 title: "Partial Updates"
 redirect_from:
 - /documentation/partial-updates.html
@@ -27,10 +27,10 @@ redirect_from:
     increasing write throughput by orders of magnitude.
     The following attribute types require a read-modify-write to the document store:
     <ul>
-      <li><a href="reference/schema-reference.html#type:array">array of struct</a></li>
-      <li><a href="reference/schema-reference.html#type:map">map of primitive and struct</a></li>
-      <li><a href="reference/schema-reference.html#type:predicate">predicate</a></li>
-      <li><a href="reference/schema-reference.html#type:reference">reference</a></li>
+      <li><a href="reference/schema-reference.html#array">array of struct</a></li>
+      <li><a href="reference/schema-reference.html#map">map of primitive and struct</a></li>
+      <li><a href="reference/schema-reference.html#predicate">predicate</a></li>
+      <li><a href="reference/schema-reference.html#reference">reference</a></li>
     </ul>
   </li>
 </ul>
@@ -124,8 +124,6 @@ field user type string {
 <p>
   Refer to <a href="proton.html">proton</a> for an overview of the write-pipeline
   and the Transaction Log Server (TLS).
-  As updating means a document is already there, the Document Meta Store has an entry,
-  so the FeedView needs to consider the field’s config for indexed, attribute and summary.
 </p>
 <table class="table">
   <thead>
@@ -162,14 +160,15 @@ field user type string {
     <th>attribute</th><td>
     <p>
     Attribute fields are in-memory fields, see <a href="attributes.html">attributes</a>.
-    Persisted in Transaction Log Service (TLS) at write. Attribute data is periodically flushed, 
-     see <a href="proton.html#attribute-flush">attribute-flush</a>.
-    This makes updates inexpensive and fast. Note that operations are persisted to the transaction log service, in 
-    the rare case of a power failure or unclean shutdown, the operations are synched from the transaction log service. 
+    This makes updates inexpensive and fast.
+    Attribute data is periodically flushed, see <a href="proton.html#attribute-flush">attribute-flush</a>.
+    Note that operations are persisted to the Transaction Log Service (TLS),
+    in the rare case of a power failure or unclean shutdown,
+    the operations are synched from the TLS.
     </p>
     <p>
 
-    Note there is no transactional support for updates across fields. 
+    Note there is no transactional support for updates across fields.
     To support high rate, there is no coordination between threads - example:
     </p>
 <pre>{% highlight json %}
@@ -193,12 +192,12 @@ field user type string {
       means reading the current value, making the update and writing it back:
     </p>
     <ul>
-      <li><a href="reference/schema-reference.html#type:array">Array of primitive types</a>,
-        <a href="reference/schema-reference.html#type:weightedset">weightedsets</a> and
-        <a href="reference/schema-reference.html#type:tensor">tensors</a> are in memory and therefore fast,
+      <li><a href="reference/schema-reference.html#array">Array of primitive types</a>,
+        <a href="reference/schema-reference.html#weightedset">weightedsets</a> and
+        <a href="reference/schema-reference.html#tensor">tensors</a> are in memory and therefore fast,
         see <a href="attributes.html#data-structures">attribute data structures</a> for performance considerations.</li>
-      <li>If the attribute field is an <a href="reference/schema-reference.html#type:array">array of struct</a> or
-        <a href="reference/schema-reference.html#type:map">map</a>,
+      <li>If the attribute field is an <a href="reference/schema-reference.html#array">array of struct</a> or
+        <a href="reference/schema-reference.html#map">map</a>,
         values are written in the document store and update rates are hence lower -
         refer to <a href="https://github.com/vespa-engine/vespa/issues/10892">
           #10892 updates of array of map/struct</a>.</li>
@@ -218,12 +217,15 @@ field user type string {
   <tr>
     <th>summary</th><td>
     <p>
-      An update to the summary store is read the current version, modify and write back a new blob.
+      An update to the <a href="proton.html#document-store">document store</a>
+      is read the current version, modify and write back a new blob.
       Refer to <a href="document-summaries.html">document summaries</a>.
     </p>
     <p>
-      Attribute fields that are also in summary get their values from the memory structures, not the summary store.
-      Use summary class with attributes only for applications with high write/query rates using memory only.
+      Attribute fields that are also in summary get their values from the memory structures,
+      not the document store.
+      Use <a href="reference/schema-reference.html#document-summary">summary class</a>
+      with attributes only for applications with high write/query rates using memory only.
     </p>
     </td>
   </tr>

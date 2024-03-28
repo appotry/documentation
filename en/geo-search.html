@@ -1,5 +1,5 @@
 ---
-# Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+# Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 title: "Geo Search"
 redirect_from:
 - /documentation/geo-search.html
@@ -7,7 +7,7 @@ redirect_from:
 
 <p>
   To model a geographical position in documents, use a field where the type is
-  <a href="reference/schema-reference.html#type:position">position</a> for
+  <a href="reference/schema-reference.html#position">position</a> for
   a single, required position.  To allow any number of positions
   (including none at all) use <code>array&lt;position&gt;</code> instead.
   This can be used to limit hits (only those documents with a position
@@ -112,8 +112,8 @@ $ curl -H "Content-Type: application/json" \
   The main rank feature to use for the example above would be
   <a href="reference/rank-features.html#distance(name).km">distance(mainloc).km</a>
   and doing further calculation on it, giving better rank to documents
-  that are closer to the wanted (query) position.  Here one needs to
-  take into consideration what sort of distances are practical;
+  that are closer to the wanted (query) position.
+  Here one needs to take into consideration what sort of distances is practical;
   traveling on foot, by car, or by plane should have quite different
   ranking scales - using different rank profiles would be one natural
   way to support that.  If the query specifies a maximum distance, that
@@ -142,7 +142,10 @@ $ curl -H "Content-Type: application/json" \
   for further processing.
 </p>
 
-
+{% include note.html content="<code>geoLocation</code> doesn't do proper great-circle-distance calculcations.
+It works well for 'local' search (city or metro area), using simpler distance calculcations.
+For positions which are very distant or close to the international date line (e.g. the Bering sea),
+the computed results may be inaccurate." %}
 
 <h2 id="using-multiple-position-fields">Using multiple position fields</h2>
 <p>

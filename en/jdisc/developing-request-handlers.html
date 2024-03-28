@@ -1,5 +1,5 @@
 ---
-# Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+# Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 title: "Developing request handlers"
 redirect_from:
 - /documentation/jdisc/developing-request-handlers.html
@@ -25,8 +25,8 @@ redirect_from:
   Upon receiving a request, the request handler must consume its content, process it,
   and then return a response.
   The most convenient way to implement a request handler is by subclassing the
-  <code><a href="https://javadoc.io/doc/com.yahoo.vespa/container-core/latest/com/yahoo/container/jdisc/ThreadedHttpRequestHandler.html">
-    ThreadedHttpRequestHandler</a></code>.
+  <a href="https://javadoc.io/doc/com.yahoo.vespa/container-core/latest/com/yahoo/container/jdisc/ThreadedHttpRequestHandler.html">
+    ThreadedHttpRequestHandler</a>.
 </p>
 <p>
   This utility base class uses a synchronous API and a multi-threaded execution model.
@@ -63,7 +63,10 @@ redirect_from:
     <td><a href="https://github.com/vespa-engine/sample-apps/blob/master/examples/http-api-using-request-handlers-and-processors/src/main/java/ai/vespa/examples/DemoHandler.java">
       DemoHandler</a></td>
     <td>A handler that modifies a request before dispatching it to the <code>ProcessingHandler</code>.
-      This handler is also used in the <a href="http-api-tutorial.html">HTTP API tutorial</a>.</td>
+      This handler is also used in the <a href="http-api-tutorial.html">HTTP API tutorial</a>.
+      Note that since this depends on ProcessingHandler you must add &lt;processing/&gt; to your &lt;container&gt; tag to use it.
+      If you want to issue Queries instead, have com.yahoo.search.searchchain.ExecutionFactory injected instead and use it
+      to create executions and call search/fill on them.</td>
   </tr>
   </tbody>
 </table>
@@ -83,5 +86,5 @@ redirect_from:
 </pre>
 <p>
   A request handler may be bound to zero or more URI patterns by adding a
-  <code><a href="../reference/services-container.html#binding">binding</a></code> element for each pattern.
+  <a href="../reference/services-container.html#binding">binding</a> element for each pattern.
 </p>

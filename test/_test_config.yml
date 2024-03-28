@@ -1,4 +1,4 @@
-# Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+# Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 # Use a comma-separated list of URLs to test multiple pages as one unit, like the news-tutorial
 
@@ -11,17 +11,16 @@ urls:
     - https://vespa.ai/migrating-from-elastic-search-to-vespa
     - >-
         en/vespa-quick-start.html,
-        en/operations/monitoring.html
+        en/operations-selfhosted/monitoring.html
 
     #The text-search tutorial is OK but text-search-ml.html is not yet properly tested from scraping to training.
     #Need more work with a scraped dataset which we can publish, then train the model and deploy.
     - >-
         en/tutorials/text-search.md,
         en/tutorials/text-search-ml.md
-    - en/getting-started-ranking.md
 
     #- https://docs.vespa.ai/en/tutorials/text-search-semantic.html Tests not implemented
     #- https://docs.vespa.ai/en/operations/multinode-systems.html Tests not implemented for AWS EC2/ECS procedures
     #
     # Kubernetes testing is blocked on running minikube on Centos, in Docker - needs more work
-    #     - https://docs.vespa.ai/en/vespa-quick-start-kubernetes.html
+    #     - https://docs.vespa.ai/en/operations/using-kubernetes-with-vespa.html

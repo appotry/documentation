@@ -1,5 +1,5 @@
 ---
-# Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+# Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 title: "Vespa query performance - a practical guide"
 ---
 
@@ -10,7 +10,7 @@ Latency numbers mentioned in the guide are obtained from running this guide on a
 This guide covers the following query serving performance aspects:
 - [Basic text search query performance](#basic-text-search-query-performance)
 - [Hits and document summaries](#hits-and-summaries)
-- [Multivalued query operators (dotProduct, weakAnd, wand, weightedSet)](#multi-valued-query-operators)
+- [Multivalued query operators (dotProduct, weakAnd, wand, in)](#multi-valued-query-operators)
 - [Searching attribute fields](#searching-attribute-fields)
 - [Searching attribute fields with fast-search](#searching-attribute-fields-using-fast-search)
 - [Ranking with tensor computations](#tensor-computations)
@@ -355,18 +355,12 @@ $ vespa deploy --wait 300 app
 </div>
 
 ## Index the dataset
-
-This guide uses the [vespa feed client](../vespa-feed-client.html) to
-feed the feed file generated in the previous section:
+Feed the feed file generated in the previous section:
 
 <div class="pre-parent">
   <button class="d-icon d-duplicate pre-copy-button" onclick="copyPreContent(this)"></button>
 <pre data-test="exec">
-$ curl -L -o vespa-feed-client-cli.zip \
-    https://search.maven.org/remotecontent?filepath=com/yahoo/vespa/vespa-feed-client-cli/{{site.variables.vespa_version}}/vespa-feed-client-cli-{{site.variables.vespa_version}}-zip.zip
-$ unzip vespa-feed-client-cli.zip
-$ ./vespa-feed-client-cli/vespa-feed-client \
-  --verbose --file feed.jsonl --endpoint http://localhost:8080
+$ vespa feed -t http://localhost:8080 feed.jsonl
 </pre>
 </div>
 
@@ -720,7 +714,7 @@ Accept-Encoding: gzip
 
 The previous section covered free text searching in a `fieldset` containing fields with
 `indexing:index`. See [indexing reference](../reference/schema-reference.html#indexing). 
-Fields of [type string](../reference/schema-reference.html#field-types) are 
+Fields of [type string](../reference/schema-reference.html#field) are 
 treated differently depending on having `index` or `attribute`:
 
 - `index` integrates with [linguistic](../linguistics.html) processing and is matched using 
@@ -746,7 +740,7 @@ for many different aspects: [ranking](../ranking.html), [result grouping](../gro
 The following section focuses on the `tags` field which we defined with `attribute`,
 matching in this field will be performed using `match:word` which is the
 default match mode for string fields with `indexing: attribute`.
-The `tags` field is of type [weightedset](../reference/schema-reference.html#type:weightedset).
+The `tags` field is of type [weightedset](../reference/schema-reference.html#weightedset).
 
 <pre>
  field tags type weightedset&lt;string&gt; {
@@ -884,13 +878,13 @@ Waiting up to 300 seconds for query service to become available ...
 To enable `fast-search`, content node(s) needs to be restarted to re-build the fast-search data structures
 for the attribute. 
 
-The following uses [vespa-sentinel-cmd command tool](../reference/vespa-cmdline-tools.html#vespa-sentinel-cmd)
+The following uses [vespa-sentinel-cmd command tool](/en/operations-selfhosted/vespa-cmdline-tools.html#vespa-sentinel-cmd)
 to restart the searchnode process:
 
 <div class="pre-parent">
   <button class="d-icon d-duplicate pre-copy-button" onclick="copyPreContent(this)"></button>
 <pre data-test="exec">
-$ docker exec vespa /opt/vespa/bin/vespa-sentinel-cmd restart searchnode
+$ docker exec vespa vespa-sentinel-cmd restart searchnode
 </pre>
 </div>
 
@@ -933,7 +927,7 @@ increased memory usage and slightly reduced indexing throughput. See also
 [when to use fast-search for attributes](feature-tuning.html#when-to-use-fast-search-for-attribute-fields).
 
 For use cases requiring `match:text` when searching multivalued string field types
-like [weightedset](../reference/schema-reference.html#type:weightedset), see
+like [weightedset](../reference/schema-reference.html#weightedset), see
 [searching multi-value fields](../searching-multi-valued-fields.html).
 
 For fields that don't need any match ranking features, it's strongly recommended
@@ -1147,7 +1141,7 @@ which cannot make it into the top k results. See the [using wand with Vespa](../
 guide for more details on the WAND algorithm. 
 
 Finally, these multi-value query operators works on both single valued fields, and array fields, 
-but optimal performance is achieved using the [weightedset](../reference/schema-reference.html#type:weightedset) 
+but optimal performance is achieved using the [weightedset](../reference/schema-reference.html#weightedset)
 field type. The `weightedset` field type only supports integer weights. The next section
 covers tensors that support more floating point number types. 
 
@@ -1252,7 +1246,7 @@ query a linear scan over all tracks.
 
 The query returns:
 
-<pre>{% highlight json%}
+<pre>{% highlight json %}
 {
     "timing": {
         "querytime": 0.01,
@@ -1415,10 +1409,10 @@ This query also retrieved some of the previous *liked* tracks. These can be remo
 from the result set using the `not` query operator, in YQL represented as `!`.
 
 <pre>
-where !weightedSet(track_id, @userLiked) 
+where !(track_id in (@userLiked))
 </pre>
 
-The [weightedSet query operator](../reference/query-language-reference.html#weightedset) 
+The [in query operator](../reference/query-language-reference.html#in)
 is the most efficient multi-value *filtering* query operator, either
 using a positive filter (match if any of the keys matches) or negative filter using `not`
 (remove from result if any of the keys matches).
@@ -1431,19 +1425,19 @@ Run query with the `not` filter:
   <button class="d-icon d-duplicate pre-copy-button" onclick="copyPreContent(this)"></button>
 <pre data-test="exec" data-test-assert-contains="Bonnie Tyler">{% raw %}
 $ vespa query \
-    'yql=select title, artist, track_id from track where !weightedSet(track_id, @userLiked)' \
+    'yql=select title, artist, track_id from track where !(track_id in (@userLiked))' \
     'input.query(user_liked)={{trackid:TRQIQMT128E0791D9C}:1.0,{trackid:TRWJIPT128E0791D99}:1.0,{trackid:TRGVORX128F4291DF1}:1.0}' \
     'ranking=similar' \
     'hits=5' \
-    'userLiked={TRQIQMT128E0791D9C:1,TRWJIPT128E0791D99:1,TRGVORX128F4291DF1:1}'
+    'userLiked=TRQIQMT128E0791D9C,TRWJIPT128E0791D99,TRGVORX128F4291DF1'
 {% endraw %}</pre>
 </div>
 
 Note that the tensor query input format is slightly different from the variable substitution supported for 
-the multivalued query operators `wand`, `weightedSet` and `dotProduct`.
+the multivalued query operators `wand`, `in` and `dotProduct`.
 The above query produces the following result:
 
-<pre>{% highlight json%}
+<pre>{% highlight json %}
 {
     "timing": {
         "querytime": 0.121,
@@ -1529,11 +1523,11 @@ query as fewer documents gets ranked by the tensor ranking expression:
   <button class="d-icon d-duplicate pre-copy-button" onclick="copyPreContent(this)"></button>
 <pre data-test="exec" data-test-assert-contains="Ronan Keating">{% raw %}
 $ vespa query \
-    'yql=select title,artist, track_id from track where tags contains "popular" and !weightedSet(track_id,@userLiked)' \
+    'yql=select title,artist, track_id from track where tags contains "popular" and !(track_id in (@userLiked))' \
     'input.query(user_liked)={{trackid:TRQIQMT128E0791D9C}:1.0,{trackid:TRWJIPT128E0791D99}:1.0,{trackid:TRGVORX128F4291DF1}:1.0}' \
     'ranking=similar' \
     'hits=5' \
-    'userLiked={TRQIQMT128E0791D9C:1,TRWJIPT128E0791D99:1,TRGVORX128F4291DF1:1}'
+    'userLiked=TRQIQMT128E0791D9C,TRWJIPT128E0791D99,TRGVORX128F4291DF1'
 {% endraw %}</pre>
 </div>
 
@@ -1618,7 +1612,7 @@ And again, adding `fast-search`, requires a re-start of the searchnode process:
 <div class="pre-parent">
   <button class="d-icon d-duplicate pre-copy-button" onclick="copyPreContent(this)"></button>
 <pre data-test="exec">
-$ docker exec vespa /opt/vespa/bin/vespa-sentinel-cmd restart searchnode
+$ docker exec vespa vespa-sentinel-cmd restart searchnode
 </pre>
 </div>
 
@@ -1641,11 +1635,11 @@ Re-run the tensor ranking query:
   <button class="d-icon d-duplicate pre-copy-button" onclick="copyPreContent(this)"></button>
 <pre data-test="exec" data-test-assert-contains="Bonnie Tyler">{% raw %}
 $ vespa query \
-    'yql=select title,artist, track_id from track where !weightedSet(track_id,@userLiked)' \
+    'yql=select title,artist, track_id from track where !(track_id in (@userLiked))' \
     'input.query(user_liked)={{trackid:TRQIQMT128E0791D9C}:1.0,{trackid:TRWJIPT128E0791D99}:1.0,{trackid:TRGVORX128F4291DF1}:1.0}' \
     'ranking=similar' \
     'hits=5' \
-    'userLiked={TRQIQMT128E0791D9C:1,TRWJIPT128E0791D99:1,TRGVORX128F4291DF1:1}'
+    'userLiked=TRQIQMT128E0791D9C,TRWJIPT128E0791D99,TRGVORX128F4291DF1'
 {% endraw %}</pre>
 </div>
 
@@ -1712,7 +1706,7 @@ Changing the global threads per search requires a restart of the `searchnode` pr
 <div class="pre-parent">
   <button class="d-icon d-duplicate pre-copy-button" onclick="copyPreContent(this)"></button>
 <pre data-test="exec">
-$ docker exec vespa /opt/vespa/bin/vespa-sentinel-cmd restart searchnode
+$ docker exec vespa vespa-sentinel-cmd restart searchnode
 </pre>
 </div>
 
@@ -1734,11 +1728,11 @@ Then repeat the tensor ranking query:
   <button class="d-icon d-duplicate pre-copy-button" onclick="copyPreContent(this)"></button>
 <pre data-test="exec" data-test-assert-contains="Bonnie Tyler">{% raw %}
 $ vespa query \
-    'yql=select title,artist, track_id from track where !weightedSet(track_id,@userLiked)' \
+    'yql=select title,artist, track_id from track where !(track_id in (@userLiked))' \
     'input.query(user_liked)={{trackid:TRQIQMT128E0791D9C}:1.0,{trackid:TRWJIPT128E0791D99}:1.0,{trackid:TRGVORX128F4291DF1}:1.0}' \
     'ranking=similar' \
     'hits=5' \
-    'userLiked={TRQIQMT128E0791D9C:1,TRWJIPT128E0791D99:1,TRGVORX128F4291DF1:1}'
+    'userLiked=TRQIQMT128E0791D9C,TRWJIPT128E0791D99,TRGVORX128F4291DF1'
 {% endraw %}</pre>
 </div>
 
@@ -1833,11 +1827,11 @@ now using the `similar-t2` profile:
   <button class="d-icon d-duplicate pre-copy-button" onclick="copyPreContent(this)"></button>
 <pre data-test="exec" data-test-assert-contains="Bonnie Tyler">{% raw %}
 $ vespa query \
-    'yql=select title,artist, track_id from track where !weightedSet(track_id,@userLiked)' \
+    'yql=select title,artist, track_id from track where !(track_id in (@userLiked))' \
     'input.query(user_liked)={{trackid:TRQIQMT128E0791D9C}:1.0,{trackid:TRWJIPT128E0791D99}:1.0,{trackid:TRGVORX128F4291DF1}:1.0}' \
     'ranking=similar-t2' \
     'hits=5' \
-    'userLiked={TRQIQMT128E0791D9C:1,TRWJIPT128E0791D99:1,TRGVORX128F4291DF1:1}'
+    'userLiked=TRQIQMT128E0791D9C,TRWJIPT128E0791D99,TRGVORX128F4291DF1'
 {% endraw %}</pre>
 </div>
 
@@ -2056,8 +2050,7 @@ Adding a new field does not require a restart, apply the partial updates by:
 <div class="pre-parent">
   <button class="d-icon d-duplicate pre-copy-button" onclick="copyPreContent(this)"></button>
 <pre data-test="exec">
-$ ./vespa-feed-client-cli/vespa-feed-client \
-    --verbose --file updates.jsonl --endpoint http://localhost:8080
+$ vespa feed -t http://localhost:8080 updates.jsonl
 </pre>
 </div>
 
@@ -2088,11 +2081,11 @@ over the most popular tracks:
   <button class="d-icon d-duplicate pre-copy-button" onclick="copyPreContent(this)"></button>
 <pre data-test="exec" data-test-assert-contains="1349">{% raw %}
 $ vespa query \
-    'yql=select title,artist, track_id, popularity from track where {hitLimit:5,descending:true}range(popularity,0,Infinity) and !weightedSet(track_id, @userLiked)' \
+    'yql=select title,artist, track_id, popularity from track where {hitLimit:5,descending:true}range(popularity,0,Infinity) and !(track_id in (@userLiked))' \
     'input.query(user_liked)={{trackid:TRQIQMT128E0791D9C}:1.0,{trackid:TRWJIPT128E0791D99}:1.0,{trackid:TRGVORX128F4291DF1}:1.0}' \
     'ranking=similar' \
     'hits=5' \
-    'userLiked={TRQIQMT128E0791D9C:1,TRWJIPT128E0791D99:1,TRGVORX128F4291DF1:1}'
+    'userLiked=TRQIQMT128E0791D9C,TRWJIPT128E0791D99,TRGVORX128F4291DF1'
 {% endraw %}</pre>
 </div>
 

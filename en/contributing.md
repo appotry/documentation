@@ -1,5 +1,5 @@
 ---
-# Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+# Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 title: "Contributing to Vespa"
 redirect_from:
 - /documentation/contributing.html
@@ -46,4 +46,5 @@ which no one are working on yet.
 
 ## Community
 If you have questions, want to share your experience or help others,
-please join our community on [Stack Overflow](http://stackoverflow.com/questions/tagged/vespa).
+please join our community on the [Vespa Slack](http://slack.vespa.ai),
+or see Vespa on [Stack Overflow](http://stackoverflow.com/questions/tagged/vespa).

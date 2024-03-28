@@ -1,5 +1,5 @@
 ---
-# Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+# Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 title: "Documents"
 redirect_from:
 - /documentation/documents.html
@@ -17,7 +17,7 @@ redirect_from:
   This configuration is used to configure the garbage collector if it is enabled.
   Additionally, it is used to define default routes for documents sent into the application.
   By default, a document will be sent to all clusters having the document type defined.
-  Refer to <a href="routing.html">routing</a> for details.
+  Refer to <a href="/en/operations-selfhosted/routing.html">routing</a> for details.
 </p>
 
 <p>
@@ -55,6 +55,11 @@ redirect_from:
   Vespa has defined one scheme, the <em>id scheme</em>:
   <code>id:&lt;namespace&gt;:&lt;document-type&gt;:&lt;key/value-pairs&gt;:&lt;user-specified&gt;</code>
 </p>
+{% include note.html content='
+An example mapping from ID to the URL used in <a href="document-v1-api-guide.html">/document/v1/</a> is from
+<code>id:mynamespace:mydoctype::user-defined-id</code> to
+<code>/document/v1/mynamespace/mydoctype/docid/user-defined-id</code>.
+Find examples and tools in <a href="document-v1-api-guide.html#document-not-found">troubleshooting</a>.' %}
 <p>
   Find examples in the <a href="document-v1-api-guide.html">/document/v1/</a> guide.
 </p>
@@ -117,7 +122,7 @@ redirect_from:
   Namespace can not be used in queries, other than as part of the full document ID.
   However, it can be used for <a href="reference/document-select-language.html">document selection</a>,
   where <code>id.namespace</code> can be accessed and compared to a given string, for instance.
-  An example use case is <a href="content/visiting.html">visiting</a> a subset of documents.
+  An example use case is <a href="visiting.html">visiting</a> a subset of documents.
 </p>
 
 
@@ -202,12 +207,12 @@ music:title,artist
 <h2 id="document-expiry">Document expiry</h2>
 <p>
   To auto-expire documents, use a <a href="reference/services-content.html#documents.selection">
-  selection</a> with <a href="reference/advanced-indexing-language.html#now">now</a>.
+  selection</a> with <a href="reference/indexing-language-reference.html#now">now</a>.
   Example, keep <em>music</em>-documents for a day, using a field called <em>timestamp</em>:
 </p>
 <pre>{% highlight xml %}
 <documents garbage-collection="true">
-  <document type="music" selection="music.timestamp &gt; now() - 86400" />
+    <document type="music" selection="music.timestamp &gt; now() - 86400" />
 </documents>
 {% endhighlight %}</pre>
 <p>The <em>timestamp</em>-field must have values in seconds since EPOCH:</p>
@@ -239,7 +244,7 @@ field timestamp type long {
   </li><li>
     Deploying a configuration where the selection string selects no documents
     will cause all documents to be garbage collected.
-    Use <a href="content/visiting.html">visit</a> to test the selection string.
+    Use <a href="visiting.html">visit</a> to test the selection string.
     Garbage collected documents are not to be expected to be recoverable.
   </li><li>
     The fields that are referenced in the selection expression should be attributes.
@@ -260,7 +265,7 @@ field timestamp type long {
     unless preempted by higher priority operations.
     If the cluster is too heavily loaded by client feed operations, there's a risk of starving
     GC from running. To verify that garbage collection is not starved, check the
-    <code><a href="operations/metrics.html"> vds.idealstate.max_observed_time_since_last_gc_sec.average</a></code>
+    <a href="operations/metrics.html">vds.idealstate.max_observed_time_since_last_gc_sec.average</a>
     distributor metric.
     If it significantly exceeds <code>garbage-collection-interval</code> it is an indication that GC is starved.
   </li>
@@ -268,7 +273,7 @@ field timestamp type long {
 <p>
   To batch remove, set a selection that matches no documents, like <em>"not music"</em>
 </p><p>
-  Use <a href="content/visiting.html">vespa visit</a> to test the selection.
+  Use <a href="visiting.html">vespa visit</a> to test the selection.
   Dump the IDs of all documents that would be <em>preserved</em>:
 </p>
 <pre>{% highlight sh %}
