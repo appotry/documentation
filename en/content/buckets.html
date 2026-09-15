@@ -1,8 +1,6 @@
 ---
-# Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+# Copyright Vespa.ai. All rights reserved.
 title: "Buckets"
-redirect_from:
-- /documentation/content/buckets.html
 ---
 
 <p>
@@ -14,7 +12,7 @@ and to keep bucket sizes within configurable limits.
 </p><p>
 Documents have string identifiers that maps to a 58 bit numeric location.
 A bucket is defined as all the documents that shares a given amount
-of least significant bits within the location.
+of the least significant bits within the location.
 The amount of bits used controls how many buckets will exist.
 For instance, if a bucket contains all documents whose 8 LSB bits is 0x01,
 the bucket can be split in two by using the 9th bit in the location to split them.
@@ -37,7 +35,7 @@ Distribution happens in several layers.
 
 <h3 id="documents-to-location-distribution">Document to location distribution</h3>
 <p>
-Document identifiers use <a href="../documents.html">document identifier schemes</a>
+Document identifiers use <a href="../schemas/documents.html">document identifier schemes</a>
 to map documents to locations.
 This way it is possible to co-locate data within buckets
 by enforcing some documents to have common LSB bits.
@@ -130,7 +128,7 @@ Scheduling a maintenance operation does not block any external operations.
 </tr><tr>
   <th style="white-space: nowrap">(De)activate bucket</th><td>
     Activate bucket for search results -
-    refer to <a href="../proton.html#bucket-management">bucket management</a></td>
+    refer to <a href="proton.html#bucket-management">bucket management</a></td>
 </tr><tr>
   <th>Garbage collections</th><td>
     If configured, documents are periodically garbage collected through
@@ -149,7 +147,7 @@ Using small buckets, the distribution will be more uniform and bucket operations
 Using large buckets, less memory is needed for metadata operations
 and bucket splitting and joining is less frequent.
 </p><p>
-The size limits may be altered by configuring <a href="../reference/services-content.html#bucket-splitting">bucket splitting</a>.
+The size limits may be altered by configuring <a href="../reference/applications/services/content.html#bucket-splitting">bucket splitting</a>.
 </p>
 
 
@@ -157,7 +155,7 @@ The size limits may be altered by configuring <a href="../reference/services-con
 <h2 id="document-to-bucket-distribution">Document to bucket distribution</h2>
 <p>
 Each document has a document identifier following a document identifier
-<a href="../documents.html">uri scheme</a>.
+<a href="../schemas/documents.html">uri scheme</a>.
 From this scheme a 58 bit numeric <em>location</em> is generated.
 Typically, all the bits are created from an MD5 checksum of the whole identifier.
 </p><p>

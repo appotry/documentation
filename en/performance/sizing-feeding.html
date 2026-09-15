@@ -1,8 +1,6 @@
 ---
-# Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+# Copyright Vespa.ai. All rights reserved.
 title: "Vespa Feed Sizing Guide"
-redirect_from:
-- /documentation/performance/sizing-feeding.html
 ---
 
 <p>
@@ -11,13 +9,13 @@ redirect_from:
   This guide provides an overview of how to optimize feed performance and also understand bottlenecks.
 </p>
 <p>
-  The <a href="../reads-and-writes.html">reads and writes</a> guide has an overview of the Vespa architecture and relevant
+  The <a href="../writing/reads-and-writes.html">reads and writes</a> guide has an overview of the Vespa architecture and relevant
   APIs for feeding and searching. One key takeaway is that Vespa is split into two main service types:
-  <ul>
-    <li>Stateless container cluster(s)</li>
-    <li>Stateful content cluster(s)</li>
-  </ul> 
 </p>
+<ul>
+  <li>Stateless container cluster(s)</li>
+  <li>Stateful content cluster(s)</li>
+</ul>
 <p>
   The stateless container cluster is responsible for processing all document operations to Vespa.
   The stateful content cluster is responsible for writing and syncing all document operations (persisting state and managing data structures).
@@ -29,18 +27,19 @@ redirect_from:
 
 
 <h2 id="stateless-container-cluster">Stateless container cluster</h2>
+<p>
   The processing of all document operations to Vespa are routed through the stateless <em>container</em> cluster. 
-  Processing includes both Vespa processing like <a href="../linguistics.html">linguistic processing</a>
-  and custom <a href="../document-processing.html">document processing</a>. The 
-  stateless container cluster is also responsible for <a href="../embedding.html">embedding</a> inference. Embedding
+  Processing includes both Vespa processing like <a href="../linguistics/linguistics.html">linguistic processing</a>
+  and custom <a href="../applications/document-processors.html">document processing</a>. The
+  stateless container cluster is also responsible for <a href="../rag/embedding.html">embedding</a> inference. Embedding
   inference can be compute-resource intensive, depending on number of <em>embed</em> calls and the size of the embedding model. 
-  See <a href="../embedding.html#embedder-performance">embedding performance</a>. 
+  See <a href="../rag/embedding.html#embedder-performance">embedding performance</a>.
 </p>
 <p>
   The stateless cluster is compute (CPU/GPU util) bound and processing rates should scale linearly with the number of nodes and the number of V-CPU's in the cluster as 
   long as the client can deliver enough operations over the network.
 </p><p>
-  See <a href="/en/operations-selfhosted/routing.html#multiple-container-clusters">multiple container clusters</a>
+  See <a href="../writing/document-routing.html#multiple-container-clusters">multiple container clusters</a>
   for how to separate search and write to different container clusters. Isolated container clusters
   are useful for high load scenarios where the container cluster is compute bound and where there is concurrent search and write load 
   and where we want to avoid write operations to impact search queries due to compute-related resource contention.
@@ -53,38 +52,38 @@ redirect_from:
 
 <h2 id="stateful-content-cluster">Stateful content cluster</h2>
 <p>
-  <strong>All feed operations</strong> to Vespa are <strong>written and synced</strong> to the <a href="../proton.html#transaction-log">transaction log</a> on 
+  <strong>All feed operations</strong> to Vespa are <strong>written and synced</strong> to the <a href="../content/proton.html#transaction-log">transaction log</a> on
   the content node(s). This include both writing new documents and updating existing documents. 
   The Vespa transaction log is a write-ahead log (WAL) that ensures durability of the data. A reply is only sent back to the client 
   when the operation is written successfully to the transaction log and applied (visible in search/get). 
 </p>
 <p>
   The write pattern is append and sequential (not random) IO. Note that Vespa cannot sustain a higher write rate than 
-  the underlaying storage can handle.  Feeding might be impacted severely if the content nodes are using network attached storage
+  the underlying storage can handle.  Feeding might be impacted severely if the content nodes are using network attached storage
   where the sync operation (for durability) has a much higher cost than on local attached storage (e.g. SSD).
-  See <a href="../reference/services-content.html#sync-transactionlog">sync-transactionlog</a>.
+  See <a href="../reference/applications/services/content.html#sync-transactionlog">sync-transactionlog</a>.
 </p>
 
 <h3 id="document-store">Document store</h3>
 <p>
-  Documents are written to the <a href="../proton.html#document-store">document store</a> in all
-  <a href="../reference/services-content.html#document">indexing modes</a> -
+  Documents are written to the <a href="../content/proton.html#document-store">document store</a> in all
+  <a href="../reference/applications/services/content.html#document">indexing modes</a> -
   this is where the copy of the document is persisted.
 </p>
 <p>
   Adding new documents to the document store is append-only with a sequential IO pattern.
   Writing a new version of a document (PUT a document that already exists) is the same as for a 
-  document id that does not exist. The in-memory mapping from 
-  document id to summary data file position is updated to point to the latest version in both cases. The 
-  summary files are <a href="../proton.html#defragmentation">defragmented</a> to remove old versions of documents.
+  document ID that does not exist. The in-memory mapping from 
+  document ID to summary data file position is updated to point to the latest version in both cases. The 
+  summary files are <a href="../content/proton.html#defragmentation">defragmented</a> to remove old versions of documents.
 </p>
 
 <h3 id="attribute-store">Attribute store</h3>
 <p>
-  Fields that are defined with the <a href="../attributes.html">attribute</a> property are in-memory fields that
-  supports in-place updates with higher <a href="../partial-updates.html">partial update</a> throughput than fields that are indexed
+  Fields that are defined with the <a href="../content/attributes.html">attribute</a> property are in-memory fields that
+  supports in-place updates with higher <a href="../writing/partial-updates.html">partial update</a> throughput than fields that are indexed
   with `index` property (avoiding read-apply-write pattern). 
-  The attribute store is a memory-only data structure that is regularly persisted to disk in the <a href="../proton.html#attributes">attribute store</a>.
+  The attribute store is a memory-only data structure that is regularly persisted to disk in the <a href="../content/proton.html#attributes">attribute store</a>.
 </p>
 <pre>
 schema ticker {
@@ -96,25 +95,25 @@ schema ticker {
 }
 </pre>
 <p>
-  See <a href="../partial-updates.html">partial updates</a> for details.
+  See <a href="../writing/partial-updates.html">partial updates</a> for details.
 </p>
 
 <h4 id="redundancy-settings">Redundancy settings</h4>
 <p>
 To achieve memory-only updates (plus transaction log writing),
-make sure all attributes to update are <a href="../proton.html#sub-databases">ready</a>,
+make sure all attributes to update are <a href="../content/proton.html#sub-databases">ready</a>,
 meaning the content node has loaded the attribute field into memory:
 </p>
 <ul>
   <li>
     One way to ensure this is to set
-    <a href="../reference/services-content.html#searchable-copies">searchable copies</a> equal to
-    <a href="../reference/services-content.html#redundancy">redundancy</a> -
+    <a href="../reference/applications/services/content.html#searchable-copies">searchable copies</a> equal to
+    <a href="../reference/applications/services/content.html#redundancy">redundancy</a> -
     i.e. all nodes that has a replica of the document has loaded it as searchable
   </li>
   <li>
     Another way is by setting
-    <a href="../reference/schema-reference.html#attribute">fast-access</a> on each attribute to update
+    <a href="../reference/schemas/schemas.html#attribute">fast-access</a> on each attribute to update
   </li>
 </ul>
 
@@ -123,9 +122,9 @@ meaning the content node has loaded the attribute field into memory:
 <h3 id="index">Index</h3>
 <p>
   Changes to index fields are written to the <a href="#document-store">document store</a>
-  and the <a href="../proton.html#index">index</a>. 
+  and the <a href="../content/proton.html#index">index</a>.
   Note that an UPDATE operation requires a read-modify-write to the document store and limits throughput.
-  Refer to <a href="../partial-updates.html">partial updates</a> for more details.
+  Refer to <a href="../writing/partial-updates.html">partial updates</a> for more details.
 </p>
 <pre>
 schema music {
@@ -146,7 +145,7 @@ these metrics can help identify bottlenecks. For example, if you notice that fee
 a certain CPU utilization, it might be that one of the thread pools is saturated.
 
 Metrics are available for each thread pool, see
-<a href="../reference/vespa-set-metrics-reference.html#searchnode-metrics">searchnode metrics</a>
+<a href="../reference/operations/metrics/vespa-metric-set.html#searchnode-metrics">searchnode metrics</a>
 for details.
 </p>
 <p>
@@ -169,10 +168,10 @@ See <a href="#bottlenecks">bottlenecks</a> for details.
     <td colspan="2">
       <p id="master-thread">
       Updates the
-      <a href="../attributes.html#document-meta-store">document metastore</a>,
+      <a href="../content/attributes.html#document-meta-store">document metastore</a>,
       prepares tasks to the <a href="#index-thread">index</a> and <a href="#summary-thread">summary</a> threads,
       and splits a write operation into a set of tasks to update individual
-      <a href="../proton.html#attributes">attributes</a>,
+      <a href="../content/proton.html#attributes">attributes</a>,
       executed by the threads in the <a href="#field-writer-executor">field writer</a>.
       </p>
     </td>
@@ -195,7 +194,7 @@ See <a href="#bottlenecks">bottlenecks</a> for details.
     <th rowspan="4">index</th>
     <td colspan="2">
       <p id="index-thread">
-      Manages writing of index fields in the <a href="../proton.html#index">memory index</a>.
+      Manages writing of index fields in the <a href="../content/proton.html#index">memory index</a>.
       It splits a write operation into a set of tasks to update individual index fields,
       executed by the threads in the <a href="#field-writer-executor">field writer</a>.
       </p>
@@ -219,7 +218,7 @@ See <a href="#bottlenecks">bottlenecks</a> for details.
     <td colspan="2">
       <p id="summary-thread">
       Writes documents to the
-      <a href="../proton.html#document-store">document store</a>.
+      <a href="../content/proton.html#document-store">document store</a>.
       </p>
     </td>
   </tr>
@@ -250,7 +249,7 @@ See <a href="#bottlenecks">bottlenecks</a> for details.
   </tr>
   <tr>
     <th>Threads</th>
-    <td>Many, controlled by <a href="../reference/services-content.html#feeding">feeding concurrency</a>.</td>
+    <td>Many, controlled by <a href="../reference/applications/services/content.html#feeding">feeding concurrency</a>.</td>
   </tr>
   <tr>
     <th>Instances</th>
@@ -267,17 +266,17 @@ See <a href="#bottlenecks">bottlenecks</a> for details.
       <p id="shared-executor">
       The threads in this thread pool are among other used to compress and
       de-compress documents in the
-      <a href="../proton.html#document-store">document store</a>,
+      <a href="../content/proton.html#document-store">document store</a>,
       merge files as part of
-      <a href="../proton.html#disk-index-fusion">disk index fusion</a>,
+      <a href="../content/proton.html#disk-index-fusion">disk index fusion</a>,
       and prepare for inserting a vector into a
-      <a href="../reference/schema-reference.html#index-hnsw">HNSW index</a>.
+      <a href="../reference/schemas/schemas.html#index-hnsw">HNSW index</a>.
       </p>
     </td>
   </tr>
   <tr>
     <th>Threads</th>
-    <td>Many, controlled by <a href="../reference/services-content.html#feeding">feeding concurrency</a>.</td>
+    <td>Many, controlled by <a href="../reference/applications/services/content.html#feeding">feeding concurrency</a>.</td>
   </tr>
   <tr>
     <th>Instances</th>
@@ -293,7 +292,7 @@ See <a href="#bottlenecks">bottlenecks</a> for details.
 
 <h2 id="multivalue-attribute">Multivalue attribute</h2>
 <p>
-  <a href="../reference/schema-reference.html#field">Multivalued attributes</a> are
+  <a href="../reference/schemas/schemas.html#field">Multivalued attributes</a> are
   <em>weightedset</em>, <em>array of struct/map</em>, <em>map of struct/map</em> and <em>tensor</em>.
   The attributes have different characteristics, which affects write performance.
   Generally, updates to multivalue fields are more expensive as the field size grows:
@@ -313,14 +312,14 @@ See <a href="#bottlenecks">bottlenecks</a> for details.
       Make the update as inexpensive as possible using numeric types instead of strings, where possible
       Example: a weighted set of string with many (1000+) elements.
       Adding an element to the set means an enum store lookup/add and add/sort of the attribute multivalue map -
-      details in <a href="../attributes.html">attributes</a>.
+      details in <a href="../content/attributes.html">attributes</a>.
       Use a numeric type instead to speed this up - this has no string comparisons.
     </td>
   </tr><tr>
     <th style="white-space: nowrap">array/map of struct/map</th>
     <td>
       Update to array of struct/map and map of struct/map requires a read from the
-      <a href="../proton.html#document-store">document store</a> and will reduce update rate -
+      <a href="../content/proton.html#document-store">document store</a> and will reduce update rate -
       see <a href="https://github.com/vespa-engine/vespa/issues/10892">#10892</a>.
     </td>
   </tr><tr>
@@ -337,7 +336,7 @@ See <a href="#bottlenecks">bottlenecks</a> for details.
 
 <h2 id="parent-child">Parent/child</h2>
 <p>
-  <a href="../parent-child.html">Parent documents</a> are global, i.e. has a replica on all nodes.
+  <a href="../schemas/parent-child.html">Parent documents</a> are global, i.e. has a replica on all nodes.
   Writing to fields in parent documents often simplify logic,
   compared to the de-normalized case where <span style="text-decoration: underline">all</span>
   (child) documents are updated.
@@ -367,7 +366,7 @@ See <a href="#bottlenecks">bottlenecks</a> for details.
 }
 </pre>
 <p>
-  If the <a href="../proton.html#document-store">document store</a>
+  If the <a href="../content/proton.html#document-store">document store</a>
   is accessed when evaluating the condition, performance drops significantly because you get random access instead of 
   just appending to the persisted data structures. 
   Conditions should be evaluated using attribute values for high performance -
@@ -418,7 +417,7 @@ See <a href="#bottlenecks">bottlenecks</a> for details.
 </pre>
 <p>
   In the first case, <em>one</em> update operation is sent from
-  <a href="../vespa-cli.html">vespa feed</a> -
+  <a href="../clients/vespa-cli.html">vespa feed</a> -
   in the latter, the client will send the second update operation <em>after</em> receiving an ack for the first.
   When updating multiple fields, put the updates in as few operations as possible.
   See <a href="../content/content-nodes.html#ordering">ordering details</a>.
@@ -430,13 +429,13 @@ See <a href="#bottlenecks">bottlenecks</a> for details.
 <p>
   A content node normally has a fixed set of resources (CPU, memory, disk).
   Configure the CPU allocation for feeding vs. searching in
-  <a href="../reference/services-content.html#feeding">concurrency</a> -
+  <a href="../reference/applications/services/content.html#feeding">concurrency</a> -
   value from 0 to 1.0 - a higher value means more CPU resources for feeding.
 </p>
 <p>
-  In addition you can also control priority of feed versus search, or rather how nice feeding shall be.
+  In addition, you can also control priority of feed versus search, or rather how nice feeding shall be.
   Since a process needs root privileges for increasing feed, we have opted to reduce priority (be nice)
-  of feeding. This is controlled by a <a href="../reference/services-content.html#feeding-niceness">niceness</a>
+  of feeding. This is controlled by a <a href="../reference/applications/services/content.html#feeding-niceness">niceness</a>
   number from 0 to 1.0 - higher value will favor search over feed. 0 is default.
 </p>
 
@@ -447,7 +446,7 @@ See <a href="#bottlenecks">bottlenecks</a> for details.
   When testing for feeding capacity:
 </p>
 <ol>
-  <li>Use <a href="../vespa-cli.html">vespa feed</a>.</li>
+  <li>Use <a href="../clients/vespa-cli.html">vespa feed</a>.</li>
   <li>Test using one content node to find its capacity and where the bottlenecks are (resource utilization metrics) and Vespa metrics</li>
   <li>Test feeding performance by adding feeder instances.
     Make sure network and CPU (content and container node) usage increases, until saturation.</li>
@@ -462,14 +461,14 @@ See <a href="#bottlenecks">bottlenecks</a> for details.
 
 <h2 id="troubleshooting">Troubleshooting</h2>
 {% include note.html content="Use the
-<a href='/en/operations-selfhosted/monitoring.html#monitoring-with-grafana'>monitoring sample app</a>
+<a href='/en/operations/self-managed/monitoring.html#monitoring-with-grafana'>monitoring sample app</a>
 to set up a sample system, with a document/query feed and dashboards, to familiarize with metrics." %}
 <table class="table">
 <tr>
   <th>Metrics</th>
   <td>
     <p id="metrics">
-    Use <a href="../reference/vespa-set-metrics-reference.html#storage-metrics">metrics</a>
+    Use <a href="../reference/operations/metrics/vespa-metric-set.html#storage-metrics">metrics</a>
     from content nodes and look at queues -
     queue wait time and queue size (all metrics in milliseconds):
     </p>
@@ -504,7 +503,7 @@ content.proton.executor.shared.utilization
     If utilization is high for
     <a href="#field-writer-executor">field writer</a> or
     <a href="#shared-executor">shared</a>, adjust
-    <a href="../reference/services-content.html#feeding">feeding concurrency</a>
+    <a href="../reference/applications/services/content.html#feeding">feeding concurrency</a>
     to allow more CPU cores to be used for feeding.
     </p>
     <p>
@@ -517,14 +516,14 @@ content.proton.executor.field_writer.saturation
     If this is close to 1.0 and higher than <em>.utilization</em> it indicates that
     one of its worker threads is a bottleneck. The reason can be that this particular thread
     is handling a large index or attribute field that is naturally expensive to write and update.
-    Use the <a href="../proton.html#custom-component-state-api">custom component state API</a>
+    Use the <a href="../content/proton.html#custom-component-state-api">custom component state API</a>
     to find which index and attribute fields are assigned to which thread (identified by <em>executor_id</em>),
     and look at the detailed statistics of the field writer to find which thread is the actual bottleneck:
     </p>
 <pre>
 state/v1/custom/component/documentdb/mydoctype/subdb/ready/index
 state/v1/custom/component/documentdb/mydoctype/subdb/ready/attributewriter
-state/v1/custom/component/threadpools/fieldwriter
+state/v1/custom/component/threadpools/field_writer
 </pre>
   </td>
 </tr><tr>
@@ -547,7 +546,7 @@ vds.distributor.removes.failures.total
   <th>Blocked feeding</th>
   <td>
     <p id="blocked-feeding">
-      This metric should be 0 - refer to <a href="../operations/feed-block.html">feed block</a>:
+      This metric should be 0 - refer to <a href="../writing/feed-block.html">feed block</a>:
     </p>
 <pre>
 content.proton.resource_usage.feeding_blocked

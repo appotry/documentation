@@ -1,4 +1,4 @@
-# Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+# Copyright Vespa.ai. All rights reserved.
 ruby '>=2.6'
 
 source "https://rubygems.org"
@@ -14,14 +14,14 @@ source "https://rubygems.org"
 # gem "jekyll", "~> 3.9.0"
 
 # This is the default theme for new Jekyll sites. You may change this to anything you like.
-gem "minima", "~> 2.0"
+gem "minima", ">= 2.5.1"
 
-# If you want to use GitHub Pages, remove the "gem "jekyll"" above and
-# uncomment the line below. To upgrade, run `bundle update github-pages`.
-gem "github-pages"
+# Direct Jekyll dependency. The `github-pages` meta-gem caps at Ruby < 4.0
+# (via commonmarker ~> 0.22), so we depend on Jekyll directly.
+gem "jekyll", "~> 3.10"
 
 # Performance-booster for watching directories on Windows
-gem "wdm", "~> 0.1.0", :install_if => Gem.win_platform?
+gem "wdm", "~> 0.2.0", :install_if => Gem.win_platform?
 
 # kramdown v2 ships without the gfm parser by default. If you're using
 # kramdown v1, comment out this line.
@@ -32,4 +32,20 @@ gem "webrick"
 
 # Get the html-proofer to work
 gem 'rake'
-gem 'html-proofer'
+gem 'html-proofer', '>= 5.2.1'
+
+# Work-around for csv and base64 no longer included in Ruby 3.4.0
+gem "csv"
+gem "base64"
+
+# Jekyll plugins group
+
+group :jekyll_plugins do
+  gem "jekyll-feed", "~> 0.12"
+  gem "jekyll-redirect-from"
+  gem "jekyll-sitemap"
+  gem "jekyll-seo-tag"
+  gem "reverse_markdown"
+  gem "parallel"
+  gem "ruby-progressbar" # <-- Add this line
+end

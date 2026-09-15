@@ -1,9 +1,7 @@
 ---
-# Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+# Copyright Vespa.ai. All rights reserved.
 title: "Profiling"
 redirect_from:
-- /documentation/performance/profiling.html
-- /documentation/performance/profiling-search-container.html
 - /en/performance/profiling-search-container.html
 ---
 
@@ -37,8 +35,8 @@ Also see <a href="valgrind.html">using valgrind with Vespa</a>.
   <thead></thead><tbody>
     <tr>
       <th>vmstat</th>
-      <td><p>
-        <em>vmstat</em> can be used to figure out what kind of resources are used:
+      <td>
+        <p><em>vmstat</em> can be used to figure out what kind of resources are used:</p>
         <ul>
           <li>cpu usage split in user, system, idle, and io wait:
             system should be low(&lt;10)</li>
@@ -66,19 +64,20 @@ r  b   swpd   free   buff  cache   si   so    bi    bo   in    cs us sy id wa
 17  0   5628 3227784 304060 23008872    0    0    20     0   27  6420 99  1  0  0</span>
 </pre>
       </td>
-    </tr><tr>
+    </tr>
+    <tr>
       <th>top</th>
       <td>
         Use <a href="https://linux.die.net/man/1/top" data-proofer-ignore>top</a> to get a real-time view of which processes consume CPU and memory.
       </td>
     </tr>
-  </tr><tr>
-    <th>iostat</th>
-    <td>
-      Use <a href="https://linux.die.net/man/1/iostat" data-proofer-ignore>iostat</a> to monitor disk IO. Note that the % busy is useless
-      for SSD/NVMe storage disks, see <a href="https://brooker.co.za/blog/2014/07/04/iostat-pct.html">Two traps in iostat: %util and svctm</a>.
-    </td>
-  </tr>
+    <tr>
+      <th>iostat</th>
+      <td>
+        Use <a href="https://linux.die.net/man/1/iostat" data-proofer-ignore>iostat</a> to monitor disk IO. Note that the % busy is useless
+        for SSD/NVMe storage disks, see <a href="https://brooker.co.za/blog/2014/07/04/iostat-pct.html">Two traps in iostat: %util and svctm</a>.
+      </td>
+    </tr>
   </tbody>
 </table>
 
@@ -88,8 +87,8 @@ r  b   swpd   free   buff  cache   si   so    bi    bo   in    cs us sy id wa
 <p>
 Sometimes, when debugging cpu usage in a remote cluster and debugging performance,
 it might be beneficial to get a performance profile snapshot.
-To use <code>perf</code> find the pid of the <a href="../proton.html">vespa-proton-bin</a> process which can be obtained using
-<a href="/en/operations-selfhosted/vespa-cmdline-tools.html#vespa-sentinel-cmd">vespa-sentinel-cmd</a>, or <em>top/ps</em>. Record:
+To use <code>perf</code> find the pid of the <a href="../content/proton.html">vespa-proton-bin</a> process which can be obtained using
+<a href="/en/reference/operations/self-managed/tools.html#vespa-sentinel-cmd">vespa-sentinel-cmd</a>, or <em>top/ps</em>. Record:
 <pre>
 $ sudo perf record -g --pid=&lt;pid-of-proton-process&gt; sleep 60
 </pre>
@@ -97,13 +96,11 @@ View a performance profile report:
 <pre>
 $ sudo perf report
 </pre>
-Sometimes it's useful to have kernel debug info installed to get symbol info for the Linux kernel:
+Sometimes it is useful to have kernel debug info installed to get symbol info for the Linux kernel:
 <pre>
 $ sudo yum install --enablerepo=base-debuginfo kernel-debuginfo-$(uname -r)
 </pre>
-<p>
-  Its important to get somewhat same version of <em>kernel-debuginfo</em> as the <em>kernel</em> package.
-</p>
+<p>It is important to get somewhat same version of <em>kernel-debuginfo</em> as the <em>kernel</em> package.</p>
 
 
 <h3 id="container-privileges">Container privileges</h3>
@@ -198,7 +195,7 @@ $ ssh -L 1080:$hostname:10001 $hostname
 <p>
   You are now ready to profile your application.
   (You will need to put some realistic load against the container instance,
-  see the <a href="vespa-benchmarking.html">Vespa benchmarking guide</a>)
+  see the <a href="benchmarking.html">Vespa benchmarking guide</a>)
   After having started the load simulation you can start the profiling session,
   open the YourKit application installed locally and select
   <em>Monitor Remote Applications =&gt; Connect to remote application</em>.

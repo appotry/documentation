@@ -1,5 +1,5 @@
 #! /usr/bin/env python3
-# Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+# Copyright Vespa.ai. All rights reserved.
 
 import io
 import os
@@ -14,7 +14,24 @@ import re
 
 from bs4 import BeautifulSoup
 
+from distutils.command import clean
 from pseudo_terminal import PseudoTerminal
+
+
+def remove_liquid_highlight(text):
+  """Removes Liquid highlighting tags from a string.
+
+  Args:
+    text: The string to remove highlighting from.
+
+  Returns:
+    The string with highlighting tags removed.
+  """
+
+  text = re.sub(r'\{%\s*highlight\s*(python|xml|.*?)\s*%\}', '', text)
+  text = re.sub(r'\{%\s*endhighlight\s*%\}', '', text)
+  return text
+
 
 ################################################################################
 # Execution
@@ -26,16 +43,17 @@ project_root = os.getcwd()
 work_dir = os.path.join(project_root, "_work")
 liquid_transforms = {}
 
-
-def print_cmd_header(cmd, extra="", print_header=True):
-    if not print_header:
-        return
+def print_separator():
     print("")
-    print("*" * 80)
-    print("* {0}".format(cmd))
+    print("*" * 120)
+
+def print_info(cmd, extra=""):
+    print("* {0} {1}".format(cmd, extra))
+
+def print_cmd(cmd, extra=""):
+    print("> {0}".format(cmd))
     if len(extra) > 0:
-        print("* ({0})".format(extra))
-    print("*" * 80)
+        print(": {0}".format(extra))
 
 
 def exec_wait(cmd, pty):
@@ -43,7 +61,7 @@ def exec_wait(cmd, pty):
     expect = cmd["wait-for"]
     max_wait = 300 if not ("timeout" in cmd) else int(cmd["timeout"])
     try_interval = 5  # todo: max this configurable too
-    print_cmd_header(command, "Waiting for '{0}'".format(expect))
+    print_cmd(command, "Waiting for '{0}'".format(expect))
 
     waited = 0
     output = ""
@@ -65,7 +83,7 @@ def exec_wait(cmd, pty):
 def exec_assert(cmd, pty):
     command = cmd["$"]
     expect = cmd["contains"]
-    print_cmd_header(command, "Expecting '{0}'".format(expect))
+    print_cmd(command, "Expecting '{0}'".format(expect))
 
     _, output = pty.run(command, verbose)
     if output.find(expect) == -1:
@@ -76,14 +94,16 @@ def exec_assert(cmd, pty):
 
 def exec_file(cmd, pty):
     path = cmd["path"]
-    print_cmd_header(path)
+    print_cmd(path)
     path_array = []
     for dir in path.split(os.path.sep)[:-1]:
         path_array.append(dir)
         if not os.path.isdir(os.path.sep.join(path_array)):
             os.makedirs(os.path.sep.join(path_array))
     with open(str(path), "w") as f:
-        f.write(str(cmd["content"]))
+        data = str(cmd["content"])
+        clean_data = remove_liquid_highlight(data)
+        f.write(clean_data)
 
     print("Wrote " + str(len(cmd["content"])) + " chars to " + path)
 
@@ -92,7 +112,7 @@ def exec_expect(cmd, pty):
     command = cmd["$"]
     expect = cmd["expect"]
     timeout = cmd["timeout"]
-    print_cmd_header(command, "Expecting '{0}'".format(expect))
+    print_cmd(command, "Expecting '{0}'".format(expect))
 
     exit_code, output = pty.run_expect(command, expect, timeout, verbose)
     if exit_code != 0:
@@ -103,7 +123,7 @@ def exec_expect(cmd, pty):
 
 def exec_default(cmd, pty):
     command = cmd["$"]
-    print_cmd_header(command)
+    print_cmd(command)
 
     exit_code, output = pty.run(command, verbose)
     if exit_code != 0:
@@ -244,7 +264,7 @@ def parse_page(html):
 def process_page(html, source_name=""):
     script = parse_page(html)
 
-    print_cmd_header("Script to execute", extra=source_name)
+    print_info("Script to execute:", extra=source_name)
     print(json.dumps(script, indent=2))
 
     exec_script(script)
@@ -261,7 +281,8 @@ def create_work_dir():
 
 
 def run_url(url):
-    print_cmd_header("Testing", url)
+    print_separator()
+    print_info("Testing", url)
     allpages = b""
     for page in url.split(","):
         page = page.strip()
@@ -290,7 +311,7 @@ def run_config(config_file):
                 failed.append(url)
 
     if len(failed) > 0:
-        raise RuntimeError("One or more files failed: " + ", ".join(failed))
+        raise RuntimeError("Tests in " + ", ".join(failed) + " failed")
 
 
 def run_file(file_name):

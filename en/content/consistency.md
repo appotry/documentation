@@ -1,8 +1,6 @@
 ---
-# Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+# Copyright Vespa.ai. All rights reserved.
 title: "Vespa Consistency Model"
-redirect_from:
-- /documentation/content/consistency.html
 ---
 
 Vespa offers configurable data redundancy with eventual consistency across replicas.
@@ -40,7 +38,7 @@ highly available in common datacenter networks.
 
 ### Write durability and consistency
 
-When a client receives a successful [write](../reads-and-writes.html) response,
+When a client receives a successful [write](../writing/reads-and-writes.html) response,
 the operation has been written and synced to disk. The replication level is configurable.
 Operations are by default written on _all_ available replica nodes before sending a response.
 "Available" here means being Up in the [cluster state](content-nodes.html#cluster-state),
@@ -74,7 +72,7 @@ visible by default.
 
 Reads are consistent on a best-effort basis and are not guaranteed to be linearizable.
 
-When using a [Get](../reference/document-v1-api-reference.html#get) or [Visit](../visiting.html) operation,
+When using a [Get](../reference/api/document-v1.html#get) or [Visit](../writing/visiting.html) operation,
 the client will never observe a partially updated document.
 For these read operations, writes behave as if they are atomic.
 
@@ -84,14 +82,14 @@ complete. Once a write is complete, all index updates are visible.
 
 Searches may observe transient loss of coverage when nodes go down. Vespa will
 restore coverage automatically when this happens. How fast this happens depends
-on the configured [searchable-copies](../reference/services-content.html#searchable-copies) value.
+on the configured [searchable-copies](../reference/applications/services/content.html#searchable-copies) value.
 
 If replicas diverge during a Get, Vespa performs a read-repair. This fetches the
 requested document from all divergent replicas. The client then receives the
 version with the newest timestamp.
 
 If replicas diverge during a Visit, the behavior is slightly different between
-the Document V1 API and [vespa-visit](/en/operations-selfhosted/vespa-cmdline-tools.html#vespa-visit):
+the Document V1 API and [vespa-visit](/en/reference/operations/self-managed/tools.html#vespa-visit):
 
   * Document V1 will prefer immediately visiting the replica that contains the
     most documents. This means it's possible for a subset of documents in a bucket
@@ -141,7 +139,7 @@ than this TTL should ideally have their indexes removed before being allowed bac
 If not, there is a risk of resurrecting previously removed documents.
 Vespa does not currently detect or handle this scenario automatically.
 
-See the documentation on [data-retention-vs-size](/en/operations-selfhosted/admin-procedures.html#data-retention-vs-size).
+See the documentation on [data-retention-vs-size](/en/operations/self-managed/admin-procedures.html#data-retention-vs-size).
 
 ### Q/A
 

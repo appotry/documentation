@@ -1,8 +1,6 @@
 ---
-# Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+# Copyright Vespa.ai. All rights reserved.
 title: "HTTP/2"
-redirect_from:
-- /documentation/performance/http2.html
 ---
 
 <p>
@@ -14,9 +12,8 @@ redirect_from:
 
 <h2 id="enabling-http-2-on-container">Enabling HTTP/2 on container</h2>
 <p>
-  HTTP/2 is enabled on a container for all connectors with TLS/HTTPS configured (requires {% include version.html version="7.418.23" %} or newer).
-  From {% include version.html version="7.462.20" %} HTTP/2 is available and enabled by default for connectors without TLS as well.
-  We do recommend HTTP/2 with TLS, both for added security, but also for a more robust connection upgrade mechanism.
+  HTTP/2 is enabled by default on a container for all connectors.
+  We recommend HTTP/2 with TLS, both for added security, but also for a more robust connection upgrade mechanism.
   Web browsers will typically only allow HTTP/2 over TLS.
 </p>
 
@@ -56,13 +53,13 @@ redirect_from:
 <p>
   One of the major improvements with HTTP/2 is multiplexing of multiple concurrent requests over a single TCP connection.
   This allows for high-throughput feeding through the
-  <a href="../reference/document-v1-api-reference.html">/document/v1/</a> HTTP API,
+  <a href="../reference/api/document-v1.html">/document/v1/</a> HTTP API,
   with a simple one-operation–one-request model,
   but without the overhead of hundreds of parallel connections that HTTP/1.1 would require for sufficient concurrency.
 </p>
 <p>
-  <code>vespa feed</code> in the <a href="../vespa-cli.html#documents">Vespa CLI</a>
-  and <a href="../vespa-feed-client.html">vespa-feed-client</a> use /document/v1/ over HTTP/2.
+  <code>vespa feed</code> in the <a href="../clients/vespa-cli.html#documents">Vespa CLI</a>
+  and <a href="../clients/vespa-feed-client.html">vespa-feed-client</a> use /document/v1/ over HTTP/2.
 </p>
 
 
@@ -76,7 +73,7 @@ redirect_from:
   Document v1 API is designed for high concurrency and can easily handle thousands of concurrent requests.
   Its implementation is asynchronous and max concurrency is not restricted by a thread pool size,
   so configure your client to allow enough concurrent requests/streams to saturate the feed container.
-  Other APIs such as the <a href="../query-api.html">Query API</a> is backed by a synchronous implementation,
+  Other APIs such as the <a href="../querying/query-api.html">Query API</a> is backed by a synchronous implementation,
   and max concurrency is restricted by the
   <a href="container-tuning.html#container-worker-threads">underlying thread pool size</a>.
   Too many concurrent streams may result in the container rejecting requests with 503 responses.
@@ -98,17 +95,17 @@ redirect_from:
 
 <h2 id="client-recommendations">Client recommendations</h2>
 <p>
-  Use <a href="../vespa-feed-client.html">vespa-feed-client</a> for feeding through Document v1 API (JDK8+).
+  Use <a href="../clients/vespa-feed-client.html">vespa-feed-client</a> for feeding through Document v1 API (JDK8+).
 </p>
 <p>
   We recommend the <a href="https://nghttp2.org/documentation/h2load-howto.html">h2load benchmarking tool</a> for load testing.
-  <a href="/en/operations/tools.html#vespa-fbench">vespa-fbench</a> does not support HTTP/2 at the moment.
+  <a href="/en/reference/operations/tools.html#vespa-fbench">vespa-fbench</a> does not support HTTP/2 at the moment.
 </p>
 <p>
   For Java there are 4 good alternatives:
 </p>
 <ol>
-  <li><a href="https://www.eclipse.org/jetty/javadoc/jetty-9/org/eclipse/jetty/client/HttpClient.html">Jetty Client</a>
+  <li><a href="https://javadoc.jetty.org/jetty-11/org/eclipse/jetty/client/HttpClient.html">Jetty Client</a>
   <li><a href="https://square.github.io/okhttp/">OkHttp</a></li>
   <li><a href="https://hc.apache.org/httpcomponents-client-5.1.x/">Apache HttpClient 5.x</a></li>
   <li><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.net.http/java/net/http/HttpClient.html">java.net.http.HttpClient (JDK11+)</a> </li>

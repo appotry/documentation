@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+# Copyright Vespa.ai. All rights reserved.
 
 import json
 import os
@@ -69,10 +69,27 @@ def vespa_remove(endpoint, doc_ids, namespace, doc_type):
 
 
 def vespa_feed(endpoint, feed, namespace, doc_type):
-    if doc_type == "paragraph" or doc_type == "term" or doc_type == "doc":
-        splits = re.split(r'/|\.', endpoint)
-        app_string = splits[3] + '.' + splits[2]
-        print(subprocess.run(['./vespa', 'feed', '-a', app_string, '-t', endpoint, feed], capture_output=True))
+    if doc_type not in ["paragraph", "term", "doc"]:
+        raise ValueError(":error:Unknown vespa doc_type: {0}".format(doc_type))
+
+    splits = re.split(r'/|\.', endpoint)
+    app_string = splits[3] + '.' + splits[2]
+    print("Feeding to app: {0} , endpoint: {1}".format(app_string, endpoint))
+
+    process = subprocess.run(['vespa', 'feed', '-a', app_string, '-t', endpoint, feed], capture_output=True)
+
+    # Print sderr if not empty
+    if process.stderr:
+        print("::group::VespaCLI-Error")
+        print("::error::Errors reported by VespaCLI:")
+        print(process.stderr.decode('utf-8'))
+        print("::endgroup::")
+
+    if process.returncode != 0:
+        print("::error::Errors encountered while feeding Vespa application.")
+        sys.exit(process.returncode)
+
+    return process.stdout.decode('utf-8')
 
 
 def get_docs(index):
@@ -89,7 +106,7 @@ def get_indexed_docids(endpoint, namespace, doc_type):
         if documents is not None:
             ids = [ find(document, "id") for document in documents ]
             for id in ids:
-                # The document id might contain chars that needs to be escaped for the delete/put operation to work
+                # The document ID might contain chars that needs to be escaped for the delete/put operation to work
                 # also for comparison with what is in the feed
                 docid = get_document_id(id) # return the last part
                 encoded = urllib.parse.quote(docid) #escape
@@ -132,7 +149,7 @@ def update_endpoint(endpoint, config):
     endpoint_url = endpoint_url[:-1] if endpoint_url.endswith("/") else endpoint_url
     endpoint_indexes = endpoint["indexes"]
 
-    print_header("Retrieving already indexed document ids for endpoint {0}".format(endpoint_url))
+    print_header("Retrieving already indexed document IDs for endpoint {0}".format(endpoint_url))
     docids_in_index = get_indexed_docids(endpoint_url, namespace, doc_type)
     print("{0} documents found.".format(len(docids_in_index)))
 
@@ -143,7 +160,7 @@ def update_endpoint(endpoint, config):
 
     if do_feed:
         docids_in_feed = set()
-        print_header("Parsing feed file(s) for document ids")
+        print_header("Parsing feed file(s) for document IDs")
         for index in endpoint_indexes:
             assert os.path.exists(index)
             docids_in_feed = docids_in_feed.union(get_feed_docids(index, namespace, doc_type))
@@ -154,17 +171,19 @@ def update_endpoint(endpoint, config):
 
         docids_to_remove = docids_in_index.difference(docids_in_feed)
         if len(docids_to_remove) > 0:
-            print_header("Removing indexed documents not in feed in {0}".format(endpoint_url))
+            print("::group::Removing indexed documents not in feed in {0}".format(endpoint_url))
             for id in docids_to_remove:
                 print("To Remove: {0}".format(id))
             vespa_remove(endpoint_url, docids_to_remove, namespace, doc_type)
             print("{0} documents removed.".format(len(docids_to_remove)))
+            print("::endgroup::")
         else:
             print("No documents to be removed.")
 
         for index in endpoint_indexes:
-            print_header("Feeding {0} to {1}...".format(index, endpoint_url))
+            print("::group::Feeding {0} to {1}".format(index, endpoint_url))
             print(vespa_feed(endpoint_url, index, namespace, doc_type))
+            print("::endgroup::")
 
         print("{0} documents fed.".format(len(docids_in_feed)))
 

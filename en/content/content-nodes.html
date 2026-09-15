@@ -1,8 +1,6 @@
 ---
-# Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+# Copyright Vespa.ai. All rights reserved.
 title: "Content nodes, states and metrics"
-redirect_from:
-- /documentation/content/content-nodes.html
 ---
 
 <img src="/assets/img/elastic-feed.svg" alt="Content cluster overview" width="540" height="auto"/>
@@ -20,7 +18,7 @@ redirect_from:
 <p>
   The <a href="#distributor">distributor</a> keeps track of
   which content nodes that stores replicas of each bucket (maximum one replica each),
-  based on <a href="../reference/services-content.html#redundancy">redundancy</a>
+  based on <a href="../reference/applications/services/content.html#redundancy">redundancy</a>
   and information from the <em>cluster controller</em>.
   A bucket maps to one distributor only.
   A distributor keeps a bucket database with bucket metadata.
@@ -44,12 +42,12 @@ redirect_from:
 
 <h2 id="cluster-state">Cluster state</h2>
 <p>
-There are three kinds of state: <a href="../reference/cluster-v2.html#state-unit">unit state</a>,
-  <a href="../reference/cluster-v2.html#state-user">user state</a> and
-  <a href="../reference/cluster-v2.html#state-generated">generated state</a> (a.k.a. <em>cluster state</em>).
+There are three kinds of state: <a href="../reference/api/cluster-v2.html#state-unit">unit state</a>,
+  <a href="../reference/api/cluster-v2.html#state-user">user state</a> and
+  <a href="../reference/api/cluster-v2.html#state-generated">generated state</a> (a.k.a. <em>cluster state</em>).
 </p>
 <p>
-  For new cluster states, the cluster state version is upped,
+  For new cluster states, the cluster state version is incremented,
   and the new cluster state is broadcast to all nodes.
   There is a minimum time between each cluster state change.
   <!-- ToDo ref to config here -->
@@ -102,7 +100,7 @@ There are three kinds of state: <a href="../reference/cluster-v2.html#state-unit
         During a controlled node shutdown, it starts the shutdown process
         by responding to the pending state request that it is now stopping.
         {% include note.html content='As controlled restarts or shutdowns are implemented as TERM signals
-        from the <a href="/en/operations-selfhosted/config-sentinel.html">config-sentinel</a>,
+        from the <a href="/en/operations/self-managed/config-sentinel.html">config-sentinel</a>,
         the cluster controller is not able to differ between controlled and other shutdowns.' %}
       </p>
     </td>
@@ -124,19 +122,20 @@ There are three kinds of state: <a href="../reference/cluster-v2.html#state-unit
         e.g., distributors and content nodes that are on the same node often stop at the same time.
       </p>
       <p>
-        The version number is upped, and the new cluster state is broadcast.
+        The version number is incremented, and the new cluster state is broadcast.
       </p>
       <p>
-        If cluster state version is <a href="../operations-selfhosted/admin-procedures.html#cluster-state">reset</a>,
-        clients to distributors can temporarily fail operations in the transition,
-        but will eventually converge on the new (lower) cluster state version.
+        If cluster state version is <a href="../operations/self-managed/admin-procedures.html#cluster-state">reset</a>,
+        distributors and content node processes may have to be restarted in order for the system
+        to converge to the new state. Nodes will reject lower cluster state versions to
+        prevent race conditions caused by overlapping cluster controller leadership periods.
       </p>
     </td>
   </tr>
   </tbody>
 </table>
 <p>
-  See <a href="../operations-selfhosted/admin-procedures.html#cluster-controller-configuration">
+  See <a href="../operations/self-managed/admin-procedures.html#cluster-controller-configuration">
   cluster controller configuration</a>.
 </p>
 
@@ -145,15 +144,15 @@ There are three kinds of state: <a href="../reference/cluster-v2.html#state-unit
 <p>
 Vespa can be configured with one cluster controller.
 Reads and writes will work well in case of cluster controller down,
-but other changes to the cluster (like a content node down) will not be handled.
-It is hence recommended configuring a set of cluster controllers.
+but other changes to the cluster (like a content node going down) will not be handled.
+It is hence recommended to configure a set of cluster controllers.
 </p><p>
 The cluster controller nodes elect a master,
 which does the node polling and cluster state broadcast.
 The other cluster controller nodes only exist to do master election
 and potentially take over if the master dies.
 </p><p>
-All cluster controllers will vote for cluster controller with the lowest index that says it is ready.
+All cluster controllers will vote for the cluster controller with the lowest index that says it is ready.
 If a cluster controller has more than half of the votes, it will be elected master.
 As a majority vote is required,
 the number of cluster controllers should be an odd number of 3 or greater.
@@ -175,7 +174,7 @@ the bucket-to-content-node mapping is kept in memory in the distributor.
 Document count, persisted size and a metadata checksum per bucket is stored as well.
 At distributor (re)start, content nodes are polled for bucket information,
 and return which buckets are owned by this distributor (using the ideal state algorithm).
-There is hence no master / name node.
+There is no centralized bucket directory node.
 Likewise, at any distributor cluster state change,
 content nodes are polled for bucket handover -
 a distributor will then handle a new set of buckets.
@@ -186,12 +185,10 @@ and sent to the right content nodes.
 To manage the document set as it grows and nodes change, buckets move between content nodes.
 </p><p>
 Document API clients (i.e. container nodes with
-<a href="../reference/services-container.html#document-api">&lt;document-api&gt;</a>)
-do not interface with the cluster controller,
-and do not know the cluster state at startup.
-Clients do not know which distributor to use at startup, and
-a random distributor is therefore used first.
-If the document operation hit the wrong distributor,
+<a href="../reference/applications/services/container.html#document-api">&lt;document-api&gt;</a>)
+do not communicate directly with the cluster controller, and do not know the cluster state at startup.
+Clients therefore start out by sending requests to a random distributor.
+If the document operation hits the wrong distributor,
 <code>WRONG_DISTRIBUTION</code> is returned, with the current cluster state in the response.
 <code>WRONG_DISTRIBUTION</code> is hence expected and normal at cold start / state change events.
 </p>
@@ -199,26 +196,26 @@ If the document operation hit the wrong distributor,
 
 <h3 id="timestamps">Timestamps</h3>
 <p>
-<a href="../reads-and-writes.html">Write operations</a>
+<a href="../writing/reads-and-writes.html">Write operations</a>
 have a <em>last modified time</em> timestamp assigned when passing through the distributor.
 The timestamp is guaranteed to be unique within the
 <a href="buckets.html">bucket</a> where it is stored.
 The timestamp is used by the content layer to decide which operation is newest.
-These timestamps can be used when <a href="../visiting.html">visiting</a>,
+These timestamps can be used when <a href="../writing/visiting.html">visiting</a>,
 to process/retrieve documents within a given time range.
 To guarantee unique timestamps, they are in microseconds -
 the microsecond part is generated to avoid conflicts with other documents.
 </p><p>
 If documents are migrated <em>between</em> clusters,
 the target cluster will have new timestamps for their entries.
-Also, when <a href="../document-processing.html">reprocessing documents</a> <em>within</em> a cluster,
+Also, when <a href="../applications/document-processors.html">reprocessing documents</a> <em>within</em> a cluster,
 documents will have new timestamps, even if not modified.
 </p>
 
 
 <h3 id="ordering">Ordering</h3>
 <p>
-The Document API uses the <a href="../documents.html#document-ids">document ID</a> to order operations.
+The Document API uses the <a href="../schemas/documents.html#document-ids">document ID</a> to order operations.
 A Document API client ensures that only one operation is pending at the same time.
 This ensures that if a client sends multiple operations for the same document,
 they will be processed in a defined order. This is done by queueing pending
@@ -228,7 +225,7 @@ operations <em>locally</em> at the client.
 and the first operation fails, the enqueued operation is sent. In other words, the
 client does not assume there exists any kind of dependency between separate
 operations to the same document. If you need to enforce this, use
-<a href="../document-v1-api-guide.html#conditional-writes">test-and-set conditions</a>
+<a href="../writing/document-v1-api-guide.html#conditional-writes">test-and-set conditions</a>
 for writes.' %}
 <p>
 If <em>different</em> clients have pending operations on the same document,
@@ -282,12 +279,12 @@ e.g. to remap requests to other buckets after bucket splitting and joining.
 </p>
 <p>
   If the distributor transitions from <code>up</code> to <code>down</code>,
-  other distributors will request metadata from the service layer node to take
+  other distributors will request metadata from the content nodes to take
   over ownership of buckets previously owned by the restarting distributor.
-  Until the distributors have gathered this new metadata from all the service
-  layer nodes, requests for these buckets can not be served, and will fail back to client.
+  Until the distributors have gathered this new metadata from all the content
+  nodes, requests for these buckets can not be served, and will fail back to client.
   When the restarting node comes back up and is marked <code>up</code> in the cluster state again,
-  the additional nodes will dump knowledge of the extra buckets they previously acquired.
+  the additional nodes will discard knowledge of the extra buckets they previously acquired.
 </p>
 <p>
   For requests with timeouts of several seconds,
@@ -297,9 +294,6 @@ e.g. to remap requests to other buckets after bucket splitting and joining.
 </p>
 <p>
   Requests to buckets not owned by the restarting distributor will not be affected.
-  The other distributors will start to do some work though, affecting latency,
-  and distributors will re-fetch metadata for all buckets they own,
-  not just the additional buckets, which may cause some disturbance.
 </p>
 
 
@@ -389,7 +383,7 @@ e.g. to remap requests to other buckets after bucket splitting and joining.
 </tbody>
 </table>
 <p>
-  Example, using the <a href="../vespa-quick-start.html">quickstart</a> -
+  Example, using the <a href="../basics/deploy-an-application-local.html">quickstart</a> -
   find the distributor port (look for HTTP):
 </p>
 <pre>
@@ -425,7 +419,7 @@ $ docker exec vespa curl -s http://localhost:19114/state/v1/metrics | jq . | \
 
 <h2 id="cluster-v2-API-examples">/cluster/v2 API examples</h2>
 <p>
-  Examples of state manipulation using the <a href="../reference/cluster-v2.html">/cluster/v2 API</a>.
+  Examples of state manipulation using the <a href="../reference/api/cluster-v2.html">/cluster/v2 API</a>.
 </p>
 <p>
   List content clusters:
@@ -582,7 +576,7 @@ curl -X PUT -H "Content-Type: application/json" --data '
 <h2 id="further-reading">Further reading</h2>
 <ul>
   <li>
-    Refer to <a href="../operations-selfhosted/admin-procedures.html">administrative procedures</a>
+    Refer to <a href="../operations/self-managed/admin-procedures.html">administrative procedures</a>
     for configuration and state monitoring / management.
   </li>
   <li>
